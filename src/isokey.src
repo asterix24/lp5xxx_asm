@@ -1,0 +1,33 @@
+m0:            	dw             	0000000000000001b   	 
+m1:            	dw             	0000000000000010b   	 
+m2:            	dw             	0000000000000100b   	 
+m3:            	dw             	0000000000001000b   	 
+m4:            	dw             	0000000000010000b   	 
+m5:            	dw             	0000000000100000b   	 
+m6:            	dw             	0000000001000000b   	
+m7:            	dw             	0000000010000000b   	
+m8:            	dw             	0000000100000000b   	
+all:           	dw             	0000000111111111b   	 
+.segment       	program1       	                    	 
+               	map_addr       	all                 	 
+               	ramp           	1,100               	 
+               	ramp           	1,-100              	 
+               	wait           	0.2                 	 
+               	map_start      	m0                  	 
+               	load_end       	m8                  	 
+loop1:         	set_pwm        	0                   	 
+               	map_next       	                    	 
+               	set_pwm        	5                   	 
+               	map_next       	                    	 
+               	set_pwm        	20                  	 
+               	map_next       	                    	
+               	set_pwm        	80                  	
+               	map_prev       	                    	
+               	map_prev       	                    	 
+               	wait           	0.07                	 
+               	branch         	0,loop1             	 
+               	end            	                    	 
+.segment       	program2       	                    	 
+               	end            	                    	 
+.segment       	program3       	                    	 
+               	end            	                    	 
