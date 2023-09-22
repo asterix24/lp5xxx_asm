@@ -3,7 +3,7 @@
 import re
 
 def op_nop(labels, inst):
-    print("NOP")
+    print("NOP", end="->")
     return []
 
 def op_dw(labels, inst):
@@ -28,14 +28,43 @@ def op_dw(labels, inst):
     if value > MAX or value < MIN:
         raise ValueError(f"Data outside limits [{inst['args']}]")
 
-    vh = "0x%02x" % ((value & 0xff00) >> 8)
-    vl = "0x%02x" % (value & 0x00ff)
+    vh = f"0x{((value & 0xff00) >> 8):02x}"
+    vl = f"0x{(value & 0x00ff):02x}"
 
     return [vh, vl]
 
 def op_map_addr(labels, inst):
-    #"op":0b100111111, "args_bits":6},
-    return []
+    """
+    The map_addr instruction sets the index pointer to point to the mapping table row
+    defined by bits [6:0] and sets the row active. The engine does not push a new PWM
+    value to the LED driver output before the set_pwm or ramp instruction is executed.
+    If the mapping has been released from an LED, the value in the PWM register still
+    controls the LED brightness.
+
+    |NAME         |VALUE (d) |  DESCRIPTION
+    |SRAM address | 0–127    | SRAM address containing mapping data restricted to lower half of memory.
+
+    """
+    OP=0b1001111110000000
+    MAX=127
+    try:
+        args = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    if args not in labels:
+        raise ValueError(f"No valid label [{inst['args']}]")
+
+    addr = int(labels[args])
+    print(addr)
+    if addr > 127:
+        raise ValueError(f"Invalid addrs[{inst['args']}]")
+
+    value = OP | addr
+    vh = f"0x{((value & 0xff00) >> 8):02x}"
+    vl = f"0x{(value & 0x00ff):02x}"
+
+    return [vh, vl]
 
 instruction_set = {
     "dw": op_dw,
