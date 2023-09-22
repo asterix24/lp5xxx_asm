@@ -1,18 +1,55 @@
 #!/bin/env python
 
 import re
+
+def op_nop(labels, inst):
+    print("NOP")
+    return []
+
+def op_dw(labels, inst):
+    MAX=0b0000000111111111
+    MIN=0
+
+    try:
+        value = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    try:
+        if "b" in value:
+            value = int(value.replace("b",""),2)
+        elif "0x" in value:
+            value = int(value,16)
+        else:
+            value = int(value)
+    except ValueError as e:
+        raise ValueError(f"Wrong data type [{inst['args']}]")
+
+    if value > MAX or value < MIN:
+        raise ValueError(f"Data outside limits [{inst['args']}]")
+
+    vh = "0x%02x" % ((value & 0xff00) >> 8)
+    vl = "0x%02x" % (value & 0x00ff)
+
+    return [vh, vl]
+
+def op_map_addr(labels, inst):
+    #"op":0b100111111, "args_bits":6},
+    return []
+
 instruction_set = {
-    "dw":{"min":0b0, "max":0b0000000111111111},
-    "map_start":{"op":0},
-    "load_end":{"op":0},
-    "map_addr":{"op":0b100111111, "args_bits":6},
-    "map_next":{"op":0},
-    "map_prev":{"op":0},
-    "ramp":{"op":0},
-    "set_pwm":{"op":0},
-    "wait":{"op":0},
-    "branch":{"op":0},
-    "end":{"op":0},
+    "dw": op_dw,
+    "segment": op_nop,
+    "map_start": op_nop,
+    "load_end":op_nop,
+    "map_addr":op_map_addr,
+    "map_next":op_nop,
+    "map_prev":op_nop,
+    "ramp":op_nop,
+    "set_pwm":op_nop,
+    "wait":op_nop,
+    "branch":op_nop,
+    "end":op_nop,
 }
 
 
@@ -32,7 +69,7 @@ def parse(src):
         toks = re.split(r"\s+", line)
         inst_args = False
         for tok in toks:
-            if inst_args:
+            if inst_args and tok:
                 inst["args"].append(tok)
                 continue
 
@@ -61,6 +98,14 @@ def parse(src):
 
     return memory, labels
 
+def asm(labels, memory):
+    asm_bin = []
+    for m in memory:
+        print(f"{m['addr']:02X}-> {m}")
+        data = instruction_set[m['op']](labels, m)
+        asm_bin += data
+
+    return asm_bin
 
 if __name__ == "__main__":
     import argparse
@@ -77,26 +122,12 @@ if __name__ == "__main__":
 
     src = open(args.src_lst)
     memory, labels = parse(src)
-
-    asm = []
-    for m in memory:
-        if m['op'] == "dw":
-            value = m["args"][0]
-            vh = 0x0
-            vl = 0x0
-            if "b" in value:
-                value = int(value.replace("b",""),2)
-                vh = (value & 0xff00) >> 8
-                vl = (value & 0x00ff)
-
-            asm.append("0x%02x" % vh)
-            asm.append("0x%02x" % vl)
-        print(f"{m['addr']:02X}-> {m}")
+    asm_bin = asm(labels, memory)
 
     for l in labels:
-        print(f"{l}: {labels[l]}")
+        print(f"{l}: {labels[l]:02X}")
 
-    for n, a in enumerate(asm):
+    for n, a in enumerate(asm_bin):
         if not n % 16:
             print()
         print(a, end=", ")
