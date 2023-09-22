@@ -16,52 +16,50 @@ instruction_set = {
 }
 
 
+def parse(src):
+    pc_instruction = 0x0
+    labels = {}
+    memory = []
 
-memory = []
-pc_instruction = 0x0
-
-label_rgex = r'^\w+:'
-
-def parse(line):
-    global pc_instruction
-
-    inst = [
-        pc_instruction,
-        None,
-        {
-            "label":None,
+    for line in src:
+        inst = {
+            "addr": pc_instruction,
+            "prg": None,
+            "op": None,
             "args":[]
         }
-    ]
 
-    toks = re.split(r"\s+", line)
-    inst_args = False
-    for tok in toks:
-        if inst_args:
-            inst[2]["args"].append(tok)
+        toks = re.split(r"\s+", line)
+        inst_args = False
+        for tok in toks:
+            if inst_args:
+                inst["args"].append(tok)
+                continue
+
+            label = re.search(r'^\w+:', tok)
+            if label is not None:
+                if label in labels:
+                    raise ValueError("Duplicate label name")
+
+                labels[label.group().replace(":","")] = pc_instruction
+
+            seg = re.search(r"^\.\w+", tok)
+            if seg is not None:
+                inst['op'] = tok.replace(".", "")
+                inst['prg'] = pc_instruction
+                inst_args = True
+
+            if tok in instruction_set:
+                inst['op'] = tok
+                pc_instruction += 1
+                inst_args = True
+
+        if label is None and inst['op'] is None:
             continue
 
-        label = re.search(label_rgex, tok)
-        if label is not None:
-            inst[2]["label"] = label.group().replace(":","")
+        memory.append(inst)
 
-        seg = re.search(r"^\.\w+", tok)
-        if seg is not None:
-            inst[1] = tok.replace(".", "")
-            pc_instruction += 1
-            inst_args = True
-
-        if tok in instruction_set:
-            inst[1] = tok
-            pc_instruction += 1
-            inst_args = True
-
-
-    if inst[2]['label'] is None and inst[1] is None:
-        return
-
-    memory.append(inst)
-
+    return memory, labels
 
 
 if __name__ == "__main__":
@@ -77,27 +75,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args.src_lst)
 
-
-    with open(args.src_lst) as f:
-        for line in f:
-            parse(line.strip())
-
+    src = open(args.src_lst)
+    memory, labels = parse(src)
 
     asm = []
     for m in memory:
-        if m[1] == "dw":
-            value = m[2]["args"][0]
+        if m['op'] == "dw":
+            value = m["args"][0]
             vh = 0x0
             vl = 0x0
             if "b" in value:
                 value = int(value.replace("b",""),2)
-                print(value)
                 vh = (value & 0xff00) >> 8
                 vl = (value & 0x00ff)
 
             asm.append("0x%02x" % vh)
             asm.append("0x%02x" % vl)
-        print(f"{m}")
+        print(f"{m['addr']:02X}-> {m}")
+
+    for l in labels:
+        print(f"{l}: {labels[l]}")
 
     for n, a in enumerate(asm):
         if not n % 16:
