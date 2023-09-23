@@ -2,7 +2,7 @@
 
 import re
 
-from instruction import instruction_set
+from instruction_set import lookup_table
 
 
 def parse(src):
@@ -38,7 +38,7 @@ def parse(src):
                 inst['prg'] = pc_instruction
                 inst_args = True
 
-            if tok in instruction_set:
+            if tok in lookup_table:
                 inst['op'] = tok
                 pc_instruction += 1
                 inst_args = True
@@ -54,8 +54,11 @@ def asm(labels, memory):
     asm_bin = []
     for m in memory:
         print(f"{m['addr']:02X}-> {m}")
-        data = instruction_set[m['op']](labels, m)
-        asm_bin += data
+        if not m['op'] in lookup_table:
+            raise ValueError(f"unknow instruction set {m['op']}")
+
+        complie_op = lookup_table[m['op']]['callback']
+        asm_bin += complie_op(m['op'], lookup_table, labels, m)
 
     return asm_bin
 

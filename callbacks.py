@@ -1,12 +1,18 @@
 #!/bin/env python
 
-def op_nop(labels, inst):
-    print("NOP", end="->")
+def byte_fmt(value):
+    vh = f"0x{((value & 0xff00) >> 8):02x}"
+    vl = f"0x{(value & 0x00ff):02x}"
+
+    return [vh, vl]
+
+def op_nop(op, table, labels, inst):
+    print(f"op_nop: {op}")
     return []
 
-def op_dw(labels, inst):
-    MAX=0b0000000111111111
-    MIN=0
+def op_dw(op, table, labels, inst):
+    MAX=table[op]["max"]
+    MIN=table[op]["min"]
 
     try:
         value = inst['args'][0]
@@ -26,12 +32,9 @@ def op_dw(labels, inst):
     if value > MAX or value < MIN:
         raise ValueError(f"Data outside limits [{inst['args']}]")
 
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
+    return byte_fmt(value)
 
-    return [vh, vl]
-
-def op_map_addr(labels, inst):
+def op_map_addr(op, table, labels, inst):
     """
     The map_addr instruction sets the index pointer to point to the mapping table row
     defined by bits [6:0] and sets the row active. The engine does not push a new PWM
@@ -43,8 +46,8 @@ def op_map_addr(labels, inst):
     |SRAM address | 0–127    | SRAM address containing mapping data restricted to lower half of memory.
 
     """
-    OP=0b1001111110000000
-    MAX=127
+    OP=table[op]['op']
+    MAX=table[op]['max']
     try:
         args = inst['args'][0]
     except IndexError as e:
@@ -54,17 +57,13 @@ def op_map_addr(labels, inst):
         raise ValueError(f"No valid label [{inst['args']}]")
 
     addr = int(labels[args])
-    print(addr)
     if addr > 127:
         raise ValueError(f"Invalid addrs[{inst['args']}]")
 
     value = OP | addr
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
+    return byte_fmt(value)
 
-    return [vh, vl]
-
-def op_ramp(labels, inst):
+def op_ramp(op, table, labels, inst):
     """
     This is the instruction useful for smoothly changing from one PWM value
     into another PWM value on the LED0 to LED8 outputs —in other words,
@@ -109,15 +108,15 @@ def op_ramp(labels, inst):
 
     NAME              | VARIABLE | VALUE (d)| DESCRIPTION
     prescale          | Numeric  | 0        | 32.7 kHz / 16 ≥ 0.488 ms cycle time
-                    |          | 1        | 32.7 kHz / 512 ≥ 15.625 ms cycle time
+                      |          | 1        | 32.7 kHz / 512 ≥ 15.625 ms cycle time
     sign              | Numeric  | 0        | Increase PWM output
-                    |          | 1        | Decrease PWM output
+                      |          | 1        | Decrease PWM output
     step time         | Numeric  | 1-31     | One ramp increment done is in step time × prescale.
-                    | Variable | 0-3      |  Value in the variable A, B, C, or D must be from 
+                      | Variable | 0-3      |  Value in the variable A, B, C, or D must be from 
     no. of increments | Numeric  | 0-255    |  1 to 31 for correct operation.
-                    | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
+                      | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
     """
-    OP_PARAM=0b0000000000000000
+    OP_PARAM=table[op]['op']
     OP_VAR  =0b1000010000000000
     prescale = 0
     sign = 0
@@ -145,15 +144,11 @@ def op_ramp(labels, inst):
         if step_time > 31 or step_time < 0:
             step_time = round((float(ramp_time) / float(level)) / float(15.625))
             prescale = 1
-        print(">>>>", step_time)
 
     value = OP_PARAM | (prescale << 14) | (step_time << 9) | (sign << 8) | level
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
+    return byte_fmt(value)
 
-    return [vh, vl]
-
-def op_wait(labels, inst):
+def op_wait(op, table, labels, inst):
     """
     When a wait instruction is executed, the engine is set in wait status, and
     the PWM values on the outputs are frozen. Note: A wait instruction with
@@ -166,9 +161,9 @@ def op_wait(labels, inst):
 
     """
 
-    OP=0b0000000000000000
-    MAX = 484
-    MIN = 0.488
+    OP = table[op]['op']
+    MAX = table[op]['max']
+    MIN = table[op]['min']
     LOW_PRESCALE = 0.488
     HIGH_PRESCALE = 15.625
 
@@ -188,36 +183,50 @@ def op_wait(labels, inst):
         prescale = 1
 
     value = OP | (prescale << 14) | (value << 9)
+    return byte_fmt(value)
 
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
-
-    return [vh, vl]
-
-
-def op_load_start(labels, inst):
+def op_load_start(op, table, abels, inst):
     """
     LOAD_START and LOAD_END
     The load_start and load_end instructions define the mapping table locations in SRAM.
     | NAME         | VALUE (d) | DESCRIPTION                                                           |
     | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
     """
-    OP=0b100111100
-    MIN=0
-    MAX=127
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-def op_load_end(labels, inst):
+    value = 0
+    return byte_fmt(value)
+
+def op_load_end(op, table, labels, inst):
     """
     LOAD_START and LOAD_END
     The load_start and load_end instructions define the mapping table locations in SRAM.
     | NAME         | VALUE (d) | DESCRIPTION                                                           |
     | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
     """
-    OP=0b100111001
-    MIN=0
-    MAX=127
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-def op_map_start(labels, inst):
+    try:
+        label = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    if not label in labels:
+        raise ValueError(f"Missing lable in source [{inst['args']}]")
+
+    addr = int(labels[label])
+    if addr < MIN or addr > MAX:
+        raise ValueError(f"wrong addres for label")
+
+
+    value = OP | addr
+    return byte_fmt(value)
+
+def op_map_start(op, table, labels, inst):
     """
     MAP_START
     The map_start instruction defines the mapping table start address in the
@@ -227,7 +236,27 @@ def op_map_start(labels, inst):
     | SRAM address | 0–127     |  Mapping table start address restricted to lower half of memory.|
     """
 
-def op_map_sel(labels, inst):
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    try:
+        label = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    if not label in labels:
+        raise ValueError(f"Missing lable in source [{inst['args']}]")
+
+    addr = int(labels[label])
+    if addr < MIN or addr > MAX:
+        raise ValueError(f"wrong addres for label")
+
+
+    value = OP | addr
+    return byte_fmt(value)
+
+def op_map_sel(op, table, labels, inst):
     """
     MAP_SEL
     With the map_sel instruction one, and only one, LED driver can be connected
@@ -243,11 +272,15 @@ def op_map_sel(labels, inst):
                              |  10–127 = no drivers selected             |
 
     """
-    OP=0b100111010
-    MIN=0
-    MAX=127
 
-def op_map_clr(labels, inst):
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    value = 0
+    return byte_fmt(value)
+
+def op_map_clr(op, table, labels, inst):
     """
     MAP_CLR
     The map_clr instruction clears engine-to-driver mapping. After the mapping
@@ -255,7 +288,10 @@ def op_map_clr(labels, inst):
     LED brightness.
     """
 
-def op_load_next(labels, inst):
+    value = 0
+    return byte_fmt(value)
+
+def op_load_next(op, table, labels, inst):
     """
     LOAD_NEXT
     Similar to the map_next instruction with the exception that no mapping is
@@ -263,8 +299,14 @@ def op_load_next(labels, inst):
     engine-to-LED-driver connection is not updated.
 
     """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-def op_map_prev(labels, inst):
+    value = 0
+    return byte_fmt(value)
+
+def op_map_prev(op, table, labels, inst):
     """
     MAP_PREV
     This instruction sets the previous row active in the mapping table each time it
@@ -276,18 +318,30 @@ def op_map_prev(labels, inst):
     the mapping has been released from an LED, the value in the PWM register still
     controls the LED brightness.
     """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    value = 0
+    return byte_fmt(value)
 
 
 
-def op_load_prev(labels, inst):
+def op_load_prev(op, table, labels, inst):
     """
     LOAD_PREV
     Similar to the map_prev instruction with the exception that no mapping is
     set. The index pointer is set to point to the previous row and the
     engine-to-LED-driver connection is not updated.
     """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-def op_load_addr(labels, inst):
+    value = 0
+    return byte_fmt(value)
+
+def op_load_addr(op, table, labels, inst):
     """
     LOAD_ADDR
     The load_addr instruction sets the index pointer to point to the mapping
@@ -297,18 +351,46 @@ def op_load_addr(labels, inst):
     | NAME        | VALUE (d) | DESCRIPTION                               |
     | SRAM address| 0–127     | address containing mapping data restricted to lower half of memory|
     """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-instruction_set = {
-    "dw": op_dw,
-    "segment": op_nop,
-    "map_start": op_nop,
-    "load_end":op_nop,
-    "map_addr":op_map_addr,
-    "map_next":op_nop,
-    "map_prev":op_nop,
-    "ramp":op_ramp,
-    "set_pwm":op_nop,
-    "wait":op_wait,
-    "branch":op_nop,
-    "end":op_nop,
-}
+    value = 0
+    return byte_fmt(value)
+
+def op_set_pwm(op, table, labels, inst):
+    """
+    Set_PWM
+    This instruction is used for setting the PWM value on outputs LED0 to LED8
+    without any ramps. Set the PWM output value from 0 to 255 with PWM value
+    bits [7:0]. Instruction execution takes 16 32-kHz clock cycles (= 488 μs).
+
+    NAME VALUE (d) DESCRIPTION
+    | NAME        | VALUE (d) | DESCRIPTION                               |
+    | PWM value   | 0–255     |PWM output duty cycle 0–100%
+    | variable    | 0-3       | 0 = local variable A
+    |             |           | 1 = local variable B
+    |             |           | 2 = global variable C
+    |             |           | 3 = global variable D
+
+
+    """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    try:
+        level = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    try:
+        level = int(level)
+    except ValueError as e:
+        raise ValueError("Wrong data type")
+
+    if level < MIN or level > MAX:
+        raise ValueError(f"value autside range")
+
+    value = OP | level
+    return byte_fmt(value)
