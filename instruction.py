@@ -195,6 +195,109 @@ def op_wait(labels, inst):
     return [vh, vl]
 
 
+def op_load_start(labels, inst):
+    """
+    LOAD_START and LOAD_END
+    The load_start and load_end instructions define the mapping table locations in SRAM.
+    | NAME         | VALUE (d) | DESCRIPTION                                                           |
+    | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
+    """
+    OP=0b100111100
+    MIN=0
+    MAX=127
+
+def op_load_end(labels, inst):
+    """
+    LOAD_START and LOAD_END
+    The load_start and load_end instructions define the mapping table locations in SRAM.
+    | NAME         | VALUE (d) | DESCRIPTION                                                           |
+    | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
+    """
+    OP=0b100111001
+    MIN=0
+    MAX=127
+
+def op_map_start(labels, inst):
+    """
+    MAP_START
+    The map_start instruction defines the mapping table start address in the
+    memory, and the first row of the table is activated (mapped) at the same time.
+
+    | NAME         | VALUE (d) | DESCRIPTION                                                     |
+    | SRAM address | 0–127     |  Mapping table start address restricted to lower half of memory.|
+    """
+
+def op_map_sel(labels, inst):
+    """
+    MAP_SEL
+    With the map_sel instruction one, and only one, LED driver can be connected
+    to a program execution engine. Connecting multiple LEDs to one engine is
+    done with the mapping table. After the mapping has been released from an
+    LED, the PWM register value still controls the LED brightness.
+
+    | NAME       | VALUE (d) | DESCRIPTION                               |
+    | LED Select | 0–127     | 0 = no drivers selected 1 = LED1 selected |
+                             |  2 = LED1 selected                        |
+                             |  ...                                      |
+                             |  9 = LED9 selected                        |
+                             |  10–127 = no drivers selected             |
+
+    """
+    OP=0b100111010
+    MIN=0
+    MAX=127
+
+def op_map_clr(labels, inst):
+    """
+    MAP_CLR
+    The map_clr instruction clears engine-to-driver mapping. After the mapping
+    has been released from an LED, the PWM register value still controls the
+    LED brightness.
+    """
+
+def op_load_next(labels, inst):
+    """
+    LOAD_NEXT
+    Similar to the map_next instruction with the exception that no mapping is
+    set. The index pointer is set to point to the next row and the
+    engine-to-LED-driver connection is not updated.
+
+    """
+
+def op_map_prev(labels, inst):
+    """
+    MAP_PREV
+    This instruction sets the previous row active in the mapping table each time it
+    is called. For example, if the third row is active at this moment, after the
+    map_prev instruction call the second row is active. If the mapping table start
+    address is reached, activation rolls to the mapping table end address next time
+    the map_prev instruction is called. The engine does not push a new PWM value to
+    the LED driver output before the set_pwm or ramp instruction is executed. If
+    the mapping has been released from an LED, the value in the PWM register still
+    controls the LED brightness.
+    """
+
+
+
+def op_load_prev(labels, inst):
+    """
+    LOAD_PREV
+    Similar to the map_prev instruction with the exception that no mapping is
+    set. The index pointer is set to point to the previous row and the
+    engine-to-LED-driver connection is not updated.
+    """
+
+def op_load_addr(labels, inst):
+    """
+    LOAD_ADDR
+    The load_addr instruction sets the index pointer to point to the mapping
+    table row defined by bits [6:0], but the row is not set active.
+
+    NAME VALUE (d) DESCRIPTION
+    | NAME        | VALUE (d) | DESCRIPTION                               |
+    | SRAM address| 0–127     | address containing mapping data restricted to lower half of memory|
+    """
+
 instruction_set = {
     "dw": op_dw,
     "segment": op_nop,

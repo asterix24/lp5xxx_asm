@@ -2,84 +2,7 @@
 
 import re
 
-def op_nop(labels, inst):
-    print("NOP", end="->")
-    return []
-
-def op_dw(labels, inst):
-    MAX=0b0000000111111111
-    MIN=0
-
-    try:
-        value = inst['args'][0]
-    except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
-
-    try:
-        if "b" in value:
-            value = int(value.replace("b",""),2)
-        elif "0x" in value:
-            value = int(value,16)
-        else:
-            value = int(value)
-    except ValueError as e:
-        raise ValueError(f"Wrong data type [{inst['args']}]")
-
-    if value > MAX or value < MIN:
-        raise ValueError(f"Data outside limits [{inst['args']}]")
-
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
-
-    return [vh, vl]
-
-def op_map_addr(labels, inst):
-    """
-    The map_addr instruction sets the index pointer to point to the mapping table row
-    defined by bits [6:0] and sets the row active. The engine does not push a new PWM
-    value to the LED driver output before the set_pwm or ramp instruction is executed.
-    If the mapping has been released from an LED, the value in the PWM register still
-    controls the LED brightness.
-
-    |NAME         |VALUE (d) |  DESCRIPTION
-    |SRAM address | 0–127    | SRAM address containing mapping data restricted to lower half of memory.
-
-    """
-    OP=0b1001111110000000
-    MAX=127
-    try:
-        args = inst['args'][0]
-    except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
-
-    if args not in labels:
-        raise ValueError(f"No valid label [{inst['args']}]")
-
-    addr = int(labels[args])
-    print(addr)
-    if addr > 127:
-        raise ValueError(f"Invalid addrs[{inst['args']}]")
-
-    value = OP | addr
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
-
-    return [vh, vl]
-
-instruction_set = {
-    "dw": op_dw,
-    "segment": op_nop,
-    "map_start": op_nop,
-    "load_end":op_nop,
-    "map_addr":op_map_addr,
-    "map_next":op_nop,
-    "map_prev":op_nop,
-    "ramp":op_nop,
-    "set_pwm":op_nop,
-    "wait":op_nop,
-    "branch":op_nop,
-    "end":op_nop,
-}
+from instruction import instruction_set
 
 
 def parse(src):
@@ -99,7 +22,7 @@ def parse(src):
         inst_args = False
         for tok in toks:
             if inst_args and tok:
-                inst["args"].append(tok)
+                inst["args"] = tok.split(",")
                 continue
 
             label = re.search(r'^\w+:', tok)
