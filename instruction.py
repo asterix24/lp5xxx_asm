@@ -107,15 +107,15 @@ def op_ramp(labels, inst):
     the exponential ramp setting, the visual effect appears like a linear ramp
     to the human eye.
 
-NAME              | VARIABLE | VALUE (d)| DESCRIPTION
-prescale          | Numeric  | 0        | 32.7 kHz / 16 ≥ 0.488 ms cycle time
-                  |          | 1        | 32.7 kHz / 512 ≥ 15.625 ms cycle time
-sign              | Numeric  | 0        | Increase PWM output
-                  |          | 1        | Decrease PWM output
-step time         | Numeric  | 1-31     | One ramp increment done is in step time × prescale.
-                  | Variable | 0-3      |  Value in the variable A, B, C, or D must be from 
-no. of increments | Numeric  | 0-255    |  1 to 31 for correct operation.
-                  | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
+    NAME              | VARIABLE | VALUE (d)| DESCRIPTION
+    prescale          | Numeric  | 0        | 32.7 kHz / 16 ≥ 0.488 ms cycle time
+                    |          | 1        | 32.7 kHz / 512 ≥ 15.625 ms cycle time
+    sign              | Numeric  | 0        | Increase PWM output
+                    |          | 1        | Decrease PWM output
+    step time         | Numeric  | 1-31     | One ramp increment done is in step time × prescale.
+                    | Variable | 0-3      |  Value in the variable A, B, C, or D must be from 
+    no. of increments | Numeric  | 0-255    |  1 to 31 for correct operation.
+                    | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
     """
     OP_PARAM=0b0000000000000000
     OP_VAR  =0b1000010000000000
@@ -132,25 +132,68 @@ no. of increments | Numeric  | 0-255    |  1 to 31 for correct operation.
 
     variable = False
     try:
-        ramp_time = int(ramp_time)
+        ramp_time = int(ramp_time) * 1000 # for convenienze is bettere in ms
     except ValueError as e:
         variable = True
 
     if not variable:
         if level < 0:
             sign = 1
+            level = abs(level)
+
         step_time = round((float(ramp_time) / float(level)) / float(0.488))
-        print(step_time)
         if step_time > 31 or step_time < 0:
             step_time = round((float(ramp_time) / float(level)) / float(15.625))
             prescale = 1
-            print(step_time)
+        print(">>>>", step_time)
 
     value = OP_PARAM | (prescale << 14) | (step_time << 9) | (sign << 8) | level
     vh = f"0x{((value & 0xff00) >> 8):02x}"
     vl = f"0x{(value & 0x00ff):02x}"
 
     return [vh, vl]
+
+def op_wait(labels, inst):
+    """
+    When a wait instruction is executed, the engine is set in wait status, and
+    the PWM values on the outputs are frozen. Note: A wait instruction with
+    prescale and time = 0 is invalid and is executed as rst.
+
+    NAME     | VALUE (d) | DESCRIPTION |
+    prescale | 0         | Divide master clock (32.7 kHz) by 16 which means 0.488 ms cycle time.
+             | 1         | Divide master clock (32.7 kHz) by 512 which means 15.625 ms cycle time.
+    time     | 1–31      | Total wait time is = (time) × (prescale). Maximum 484 ms, minimum 0.488 ms.
+
+    """
+
+    OP=0b0000000000000000
+    MAX = 484
+    MIN = 0.488
+    LOW_PRESCALE = 0.488
+    HIGH_PRESCALE = 15.625
+
+    try:
+        w_time = float(inst['args'][0]) * 1000
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    if w_time > MAX or w_time < MIN:
+        raise ValueError(f"Invalid value [{inst['args']}] valid range is {MAX}ms to {MIN}ms")
+
+
+    prescale = 0
+    value = round(float(w_time) / LOW_PRESCALE)
+    if value > 31:
+        value = round(float(w_time) / HIGH_PRESCALE)
+        prescale = 1
+
+    value = OP | (prescale << 14) | (value << 9)
+
+    vh = f"0x{((value & 0xff00) >> 8):02x}"
+    vl = f"0x{(value & 0x00ff):02x}"
+
+    return [vh, vl]
+
 
 instruction_set = {
     "dw": op_dw,
@@ -162,7 +205,7 @@ instruction_set = {
     "map_prev":op_nop,
     "ramp":op_ramp,
     "set_pwm":op_nop,
-    "wait":op_nop,
+    "wait":op_wait,
     "branch":op_nop,
     "end":op_nop,
 }
