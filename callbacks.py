@@ -47,7 +47,9 @@ def op_map_addr(op, table, labels, inst):
 
     """
     OP=table[op]['op']
+    MIN=table[op]['min']
     MAX=table[op]['max']
+
     try:
         args = inst['args'][0]
     except IndexError as e:
@@ -57,7 +59,7 @@ def op_map_addr(op, table, labels, inst):
         raise ValueError(f"No valid label [{inst['args']}]")
 
     addr = int(labels[args])
-    if addr > 127:
+    if addr > MAX or addr < MIN:
         raise ValueError(f"Invalid addrs[{inst['args']}]")
 
     value = OP | addr
@@ -287,23 +289,37 @@ def op_map_clr(op, table, labels, inst):
     has been released from an LED, the PWM register value still controls the
     LED brightness.
     """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
 
-    value = 0
+    if len(inst['args'] > 0):
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
     return byte_fmt(value)
 
-def op_load_next(op, table, labels, inst):
+def op_map_next(op, table, labels, inst):
     """
-    LOAD_NEXT
-    Similar to the map_next instruction with the exception that no mapping is
-    set. The index pointer is set to point to the next row and the
-    engine-to-LED-driver connection is not updated.
-
+    MAP_NEXT
+    This instruction sets the next row active in the mapping table
+    each time it is called. For example, if the second row is active at this
+    moment, after the map_next instruction call the third row is active. If the
+    mapping table end address is reached, activation rolls to the mapping-table
+    start address the next time when the map_next instruction is called. The
+    engine does not push a new PWM value to the LED driver output before the
+    set_pwm or ramp instruction is executed. If the mapping has been released
+    from an LED, the value in the PWM register still controls the LED
+    brightness.
     """
     OP=table[op]['op']
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    value = 0
+    if len(inst['args']) > 0:
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
     return byte_fmt(value)
 
 def op_map_prev(op, table, labels, inst):
@@ -322,9 +338,29 @@ def op_map_prev(op, table, labels, inst):
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    value = 0
+    if len(inst['args']) > 0:
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
     return byte_fmt(value)
 
+def op_load_next(op, table, labels, inst):
+    """
+    LOAD_NEXT
+    Similar to the map_next instruction with the exception that no mapping is
+    set. The index pointer is set to point to the next row and the
+    engine-to-LED-driver connection is not updated.
+
+    """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    if len(inst['args'] > 0):
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
+    return byte_fmt(value)
 
 
 def op_load_prev(op, table, labels, inst):
@@ -338,7 +374,10 @@ def op_load_prev(op, table, labels, inst):
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    value = 0
+    if len(inst['args'] > 0):
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
     return byte_fmt(value)
 
 def op_load_addr(op, table, labels, inst):
@@ -355,7 +394,19 @@ def op_load_addr(op, table, labels, inst):
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    value = 0
+    try:
+        args = inst['args'][0]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+
+    if args not in labels:
+        raise ValueError(f"No valid label [{inst['args']}]")
+
+    addr = int(labels[args])
+    if addr > MAX or addr < MIN:
+        raise ValueError(f"Invalid addrs[{inst['args']}]")
+
+    value = OP | addr
     return byte_fmt(value)
 
 def op_set_pwm(op, table, labels, inst):
@@ -393,4 +444,79 @@ def op_set_pwm(op, table, labels, inst):
         raise ValueError(f"value autside range")
 
     value = OP | level
+    return byte_fmt(value)
+
+def op_end(op, table, labels, inst):
+    """
+    END
+    End program execution. The instruction takes 16 32-kHz clock cycles.
+
+    | NAME  | VALUE (d) | DESCRIPTION
+    | int   | 0         | No interrupt is sent. PWM register values remain intact.
+    |       | 1         | Reset program counter value to 0 and send interrupt to
+    |       |           | processor by pulling the INT pin down and setting the corresponding status
+    |       |           | bit high to notify that the program has ended. PWM register values remain
+    |       |           | intact. Interrupts can be cleared by reading the interrupt bits in
+    |       |           | STATUS/INTERRUPT register at address 3Ch.
+    | reset | 0         | Reset program counter value to 0 and hold. PWM register values remain intact.
+    |       | 1         | Reset program counter value to 0 and hold. PWM register values of the
+    |       |           | non-mapped drivers remain. PWM register values of the mapped drivers are set to
+    |       |           |  0000 0000b.
+    """
+
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    i = 0
+    r = 0
+
+    for a in inst['args']:
+        if "i" in a.lower():
+            i = 1
+        if "r" in a.lower():
+            r = 1
+        if not a.lower() in ['i', 'r']:
+            raise ValueError(f"invalid arguments {inst['args']}")
+
+    value = OP | i << 12 | r << 11
+    return byte_fmt(value)
+
+def op_reset(op, table, labels, inst):
+    """
+    RST
+    The rst instruction resets the program counter register (address 30h, 31h, or
+    32h) and continues executing the program from the program the start address
+    defined in register addresses 4Bh–4Dh. The instruction takes 16 32‐kHz clock
+    cycles. Note that default value for all program memory registers is 0000h,
+    which is the rst instruction.
+    """
+
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    if len(inst['args'] > 0):
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
+    return byte_fmt(value)
+
+def op_int(op, table, labels, inst):
+    """
+    INT
+    Send an interrupt to the processor by pulling the INT pin down and setting the
+    corresponding status bit high. Interrupts can be cleared by reading the
+    interrupt bits in the ENGINE_STATUS register at address 3Ch.
+
+    """
+
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    if len(inst['args'] > 0):
+        raise ValueError(f"No arguments needs for this command {inst}")
+
+    value = OP
     return byte_fmt(value)
