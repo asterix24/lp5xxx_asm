@@ -1,0 +1,58 @@
+ 001 00 0001    m0:            	dw             	0000000000000001b   	 
+ 002 01 0002    m1:            	dw             	0000000000000010b   	 
+ 003 02 0004    m2:            	dw             	0000000000000100b   	 
+ 004 03 0008    m3:            	dw             	0000000000001000b   	 
+ 005 04 0010    m4:            	dw             	0000000000010000b   	 
+ 006 05 0020    m5:            	dw             	0000000000100000b   	 
+ 007 06 0040    m6:            	dw             	0000000001000000b   	
+ 008 07 0080    m7:            	dw             	0000000010000000b   	
+ 009 08 0100    m8:            	dw             	0000000100000000b   	
+ 010 09 01FF    all:           	dw             	0000000111111111b   	 
+ 011            .segment       	program1       	                    	 
+ 012 0A 9F89        map_addr       	all                 	 
+ 013 0B 2864        ramp           	1,100               	 
+ 014 0C 2964        ramp           	1,-100              	 
+ 015 0D 5A00        wait           	0.2                 	 
+ 016 0E 9C00        map_start      	m0                  	 
+ 017 0F 9C88        load_end       	m8                  	 
+ 018 10 4000    loop1:         	set_pwm        	0                   	 
+ 019 11 9D80        map_next       	                    	 
+ 020 12 4005        set_pwm        	5                   	 
+ 021 13 9D80        map_next       	                    	 
+ 022 14 4014        set_pwm        	20                  	 
+ 023 15 9D80        map_next       	                    	
+ 024 16 4050        set_pwm        	80                  	
+ 025 17 9DC0        map_prev       	                    	
+ 026 18 9DC0        map_prev       	                    	 
+ 027 19 4800        wait           	0.07                	 
+ 028 1A A006        branch         	0,loop1             	 
+ 029 1B C000        end            	                    	 
+ 030            .segment       	program2       	                    	 
+ 031 1C C000        end            	                    	 
+ 032            .segment       	program3       	                    	 
+ 033 1D C000        end            	                    	 
+
+================================
+Labels:
+m0 = 00
+m1 = 01
+m2 = 02
+m3 = 03
+m4 = 04
+m5 = 05
+m6 = 06
+m7 = 07
+m8 = 08
+all = 09
+loop1 = 10
+
+================================
+Segments:
+program1 = 0A
+program2 = 1C
+program3 = 1D
+
+================================
+Free memory: 225
+Errors: 0
+
