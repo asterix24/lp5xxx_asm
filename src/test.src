@@ -1,0 +1,33 @@
+row1:          	dw             	0000000000000001b   	;Map LED = D1 on the eval. board.
+row2:          	dw             	0000000000000010b   	;Map LED = D2 on the eval. board.
+               	dw             	0000000000000100b   	;Map LED = D3 on the eval. board.
+               	dw             	0000000000111000b   	;Map RGB LED = D11 on the eval. board.
+row5:          	dw             	0000000111000000b   	;Map RGB LED = D12 on the eval. board.
+               	               	                    	 
+               	               	                    	 
+.segment       	program1       	                    	;Program for engine 1.
+               	               	                    	 
+loop1_0:       	               	                    	 
+               	               	                    	 
+               	map_start      	row1                	;Map the first LED.
+               	load_end       	row5                	;End address of the mapping data table.
+loop1:         	               	                    	 
+               	ramp           	2, 200              	;Increase PWM 0->100% in 1.5 second.
+               	ramp           	2, -255             	;Decrease PWM 100->0% in 1.5 seconds.
+               	wait           	0.4                 	;Wait for 0.4 seconds.
+               	map_next       	                    	;Set the next row active in the mapping table.
+               	branch         	4,loop1             	;Loop 6 time                            	         	 
+               	               	                    	 
+               	               	                    	 
+               	rst            	                    	 
+               	               	                    	 
+.segment       	program2       	                    	 
+               	               	                    	 
+               	rst            	                    	 
+               	               	                    	 
+.segment       	program3       	                    	 
+               	               	                    	 
+               	rst            	                    	 
+               	               	                    	 
+               	               	                    	 
+               	               	                    	 

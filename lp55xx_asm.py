@@ -11,19 +11,31 @@ def parse(src):
     memory = []
 
     segment_addr = 0
+    line_no = 0
     for line in src:
+        # Skip blank line and strip
+        # Remove comment string from line
+        line = line.strip()
+        if not line:
+            continue
+        line = re.sub(r";.*$", "", line)
+
         inst = {
+            "line_no":line_no,
+            "line": line,
             "addr": pc_instruction,
             "prg": None,
             "op": None,
             "args":[]
         }
 
+        line_no += 1
         toks = re.split(r"\s+", line)
         inst_args = False
         for tok in toks:
             if inst_args and tok:
-                inst["args"] = tok.split(",")
+                inst["args"] += tok.split(",")
+                inst["args"] = list(filter(len, inst["args"]))
                 continue
 
             label = re.search(r'^\w+:', tok)
@@ -57,6 +69,9 @@ def asm(labels, memory):
     asm_bin = []
     for m in memory:
         print(f"{m['addr']:02X}-> {m}")
+        if m['op'] is None:
+            continue
+
         if not m['op'] in lookup_table:
             raise ValueError(f"unknow instruction set {m['op']}")
 
@@ -73,6 +88,7 @@ def asm(labels, memory):
 
 if __name__ == "__main__":
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(
         prog='lp55xx_asm',
@@ -81,15 +97,21 @@ if __name__ == "__main__":
 
     parser.add_argument('src_lst')
 
-    args = parser.parse_args()
-    print(args.src_lst)
+    try:
+        args = parser.parse_args()
+        print(args.src_lst)
 
-    src = open(args.src_lst)
-    memory, labels = parse(src)
-    asm_bin = asm(labels, memory)
+        src = open(args.src_lst)
+        memory, labels = parse(src)
 
-    for l in labels:
-        print(f"{l}: {labels[l]:02X}")
+        for l in labels:
+            print(f"{l}: {labels[l]:02X}")
+
+        asm_bin = asm(labels, memory)
+    except ValueError as e:
+        print(e)
+        sys.exit(1)
+
 
     for n, a in enumerate(asm_bin):
         if not n % 16:

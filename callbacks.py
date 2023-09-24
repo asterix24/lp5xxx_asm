@@ -6,6 +6,24 @@ def byte_fmt(value):
 
     return [vh, vl]
 
+def show_msg(flag, ctx, msg):
+    line = "\n\n"
+    line += "-" * int((80 - len(flag) - 1) / 2)
+    line += f" {flag.upper()} "
+    line += "-" * int((80 - len(flag) - 1) / 2)
+    line += f"\n-> {ctx['line']}"
+    line += f"\n-> line no: {ctx['line_no']}\n"
+    line += f"\n{msg}\n\n"
+    flag = " Dump "
+    line += flag
+    line += "-" * int((80 - len(flag) - 1) / 2)
+    for i in ["prg", "op", "args"]:
+        line += f"\n- {i}: {ctx[i]}"
+    line += "\n\n"
+    line += "-" * (int((80 - len(flag) - 1) / 2) + len(flag))
+
+    return line
+
 def op_nop(op, table, labels, inst):
     print(f"op_nop: {op}")
     return []
@@ -17,7 +35,7 @@ def op_dw(op, table, labels, inst):
     try:
         value = inst['args'][0]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing data"))
 
     try:
         if "b" in value:
@@ -27,10 +45,10 @@ def op_dw(op, table, labels, inst):
         else:
             value = int(value)
     except ValueError as e:
-        raise ValueError(f"Wrong data type [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Wrong data type"))
 
     if value > MAX or value < MIN:
-        raise ValueError(f"Data outside limits [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
 
     return byte_fmt(value)
 
@@ -53,14 +71,14 @@ def op_map_addr(op, table, labels, inst):
     try:
         args = inst['args'][0]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if args not in labels:
-        raise ValueError(f"No valid label [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
 
     addr = int(labels[args])
     if addr > MAX or addr < MIN:
-        raise ValueError(f"Invalid addrs[{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Invalid address"))
 
     value = OP | addr
     return byte_fmt(value)
@@ -129,7 +147,7 @@ def op_ramp(op, table, labels, inst):
         ramp_time = float(inst['args'][0])
         level = int(inst['args'][1])
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     variable = False
     try:
@@ -172,10 +190,10 @@ def op_wait(op, table, labels, inst):
     try:
         w_time = float(inst['args'][0]) * 1000
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if w_time > MAX or w_time < MIN:
-        raise ValueError(f"Invalid value [{inst['args']}] valid range is {MAX}ms to {MIN}ms")
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX}ms to {MIN}ms"))
 
 
     prescale = 0
@@ -215,14 +233,14 @@ def op_load_end(op, table, labels, inst):
     try:
         label = inst['args'][0]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if not label in labels:
-        raise ValueError(f"Missing lable in source [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "No such lable found in source"))
 
     addr = int(labels[label])
     if addr < MIN or addr > MAX:
-        raise ValueError(f"wrong addres for label")
+        raise ValueError(show_msg("Error", inst, "Wrong address for labels"))
 
 
     value = OP | addr
@@ -245,14 +263,14 @@ def op_map_start(op, table, labels, inst):
     try:
         label = inst['args'][0]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if not label in labels:
-        raise ValueError(f"Missing lable in source [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, "No such label in source"))
 
     addr = int(labels[label])
     if addr < MIN or addr > MAX:
-        raise ValueError(f"wrong addres for label")
+        raise ValueError(show_msg("Error", inst, "Wrong address for label"))
 
 
     value = OP | addr
@@ -294,7 +312,7 @@ def op_map_clr(op, table, labels, inst):
     MAX=table[op]['max']
 
     if len(inst['args'] > 0):
-        raise ValueError(f"No arguments needs for this command {inst}")
+        raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
@@ -317,7 +335,7 @@ def op_map_next(op, table, labels, inst):
     MAX=table[op]['max']
 
     if len(inst['args']) > 0:
-        raise ValueError(f"No arguments needs for this command {inst}")
+        raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
@@ -339,7 +357,7 @@ def op_map_prev(op, table, labels, inst):
     MAX=table[op]['max']
 
     if len(inst['args']) > 0:
-        raise ValueError(f"No arguments needs for this command {inst}")
+        raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
@@ -357,7 +375,7 @@ def op_load_next(op, table, labels, inst):
     MAX=table[op]['max']
 
     if len(inst['args'] > 0):
-        raise ValueError(f"No arguments needs for this command {inst}")
+        raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
@@ -375,7 +393,7 @@ def op_load_prev(op, table, labels, inst):
     MAX=table[op]['max']
 
     if len(inst['args'] > 0):
-        raise ValueError(f"No arguments needs for this command {inst}")
+        raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
@@ -397,14 +415,14 @@ def op_load_addr(op, table, labels, inst):
     try:
         args = inst['args'][0]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
 
     if args not in labels:
-        raise ValueError(f"No valid label [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
 
     addr = int(labels[args])
     if addr > MAX or addr < MIN:
-        raise ValueError(f"Invalid addrs[{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"Invalid address"))
 
     value = OP | addr
     return byte_fmt(value)
@@ -432,16 +450,14 @@ def op_set_pwm(op, table, labels, inst):
 
     try:
         level = inst['args'][0]
-    except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
-
-    try:
         level = int(level)
+    except IndexError as e:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
     except ValueError as e:
-        raise ValueError("Wrong data type")
+        raise ValueError(show_msg("Error", inst, f"Wrong data type, int needed"))
 
     if level < MIN or level > MAX:
-        raise ValueError(f"value autside range")
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
 
     value = OP | level
     return byte_fmt(value)
@@ -477,7 +493,7 @@ def op_end(op, table, labels, inst):
         if "r" in a.lower():
             r = 1
         if not a.lower() in ['i', 'r']:
-            raise ValueError(f"invalid arguments {inst['args']}")
+            raise ValueError(show_msg("Error", inst, f"Wrong arguments valid are [i, r]"))
 
     value = OP | i << 12 | r << 11
     return byte_fmt(value)
@@ -552,19 +568,19 @@ def op_branch(op, table, labels, inst):
         nloops = int(inst['args'][0])
         nsteps = inst['args'][1]
     except IndexError as e:
-        raise ValueError(f"Missing data [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
     except ValueError as e:
-        raise ValueError("Wrong data type")
+        raise ValueError(show_msg("Error", inst, f"Wrong data type"))
 
     if nsteps not in labels:
-        raise ValueError(f"No valid label [{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
 
     addr = int(labels[nsteps]) - int(inst['prg'])
     if addr > MAX[1] or addr < MIN[1]:
-        raise ValueError(f"Invalid addrs[{inst['args']}]")
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
 
     if nloops < MIN[0] or nloops > MAX[0]:
-        raise ValueError(f"value autside range [{nloops}]")
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
 
     value = OP | nloops << 7 | addr
     return byte_fmt(value)
