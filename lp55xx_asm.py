@@ -10,6 +10,7 @@ def parse(src):
     labels = {}
     memory = []
 
+    segment_addr = 0
     for line in src:
         inst = {
             "addr": pc_instruction,
@@ -36,10 +37,12 @@ def parse(src):
             if seg is not None:
                 inst['op'] = tok.replace(".", "")
                 inst['prg'] = pc_instruction
+                segment_addr = pc_instruction
                 inst_args = True
 
             if tok in lookup_table:
                 inst['op'] = tok
+                inst['prg'] = segment_addr
                 pc_instruction += 1
                 inst_args = True
 
@@ -60,7 +63,13 @@ def asm(labels, memory):
         complie_op = lookup_table[m['op']]['callback']
         asm_bin += complie_op(m['op'], lookup_table, labels, m)
 
-    return asm_bin
+        l = len(asm_bin)
+        if l % 16:
+            l = (int(l/16)+1)*16
+
+        padding = ["0x00" for i in range(l - len(asm_bin))]
+
+    return asm_bin + padding
 
 if __name__ == "__main__":
     import argparse
