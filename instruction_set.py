@@ -24,7 +24,7 @@ lookup_table = {
 "rst":       { "callback":op_reset,     "op":0b0000000000000000, "min":None, "max":None},
 "end":       { "callback":op_end,       "op":0b1100000000000000, "min":None, "max":None},
 "int":       { "callback":op_int,       "op":0b1100010000000000, "min":None, "max":None},
-"branch":    { "callback":op_nop,        "op":None, "min":None, "max":None},
+"branch":    { "callback":op_branch,    "op":0b1010000000000000, "min":[0,0], "max":[63, 127]},
 
 "segment":   { "callback":op_nop,     "op":None, "min":None, "max":None},
 }

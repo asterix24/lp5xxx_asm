@@ -496,7 +496,7 @@ def op_reset(op, table, labels, inst):
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    if len(inst['args'] > 0):
+    if len(inst['args']) > 0:
         raise ValueError(f"No arguments needs for this command {inst}")
 
     value = OP
@@ -515,8 +515,57 @@ def op_int(op, table, labels, inst):
     MIN=table[op]['min']
     MAX=table[op]['max']
 
-    if len(inst['args'] > 0):
+    if len(inst['args']) > 0:
         raise ValueError(f"No arguments needs for this command {inst}")
 
     value = OP
     return byte_fmt(value)
+
+def op_branch(op, table, labels, inst):
+    """
+    BRANCH
+    The branch instruction is provided for repeating a portion of the program
+    code several times. The branch instruction loads a step number value to the
+    program counter. A loop count parameter defines how many times the
+    instructions inside the loop are repeated. The step number is loaded into
+    the PC when the instruction is executed. The PC is relative to the
+    ENGINEx_PROG_START register setting. The LP5569 device supports nested
+    looping, that is, a loop inside a loop. The number of nested loops is not
+    limited. The instruction takes 16 32-kHz clock cycles.
+
+    | NAME        | VALUE (d) | DESCRIPTION
+    | loop count  | 0-63      | The number of loops to be done. 0 means an infinite loop
+    | step number | 0-127     | The step number to be loaded to program counter.
+    | loop count  | 0-3       | Selects the variable for loop count value. Loop
+    |             |           | count is loaded with the value of the variable defined below.
+    |             |           | 0 = Local variable A
+    |             |           | 1 = Local variable B
+    |             |           | 2 = Global variable C
+    |             |           | 3 = Global variable D
+
+    """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    try:
+        nloops = int(inst['args'][0])
+        nsteps = inst['args'][1]
+    except IndexError as e:
+        raise ValueError(f"Missing data [{inst['args']}]")
+    except ValueError as e:
+        raise ValueError("Wrong data type")
+
+    if nsteps not in labels:
+        raise ValueError(f"No valid label [{inst['args']}]")
+
+    addr = int(labels[nsteps]) - int(inst['prg'])
+    if addr > MAX[1] or addr < MIN[1]:
+        raise ValueError(f"Invalid addrs[{inst['args']}]")
+
+    if nloops < MIN[0] or nloops > MAX[0]:
+        raise ValueError(f"value autside range [{nloops}]")
+
+    value = OP | nloops << 7 | addr
+    return byte_fmt(value)
+
