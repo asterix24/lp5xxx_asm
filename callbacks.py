@@ -1,8 +1,8 @@
 #!/bin/env python
 
 def byte_fmt(value):
-    vh = f"0x{((value & 0xff00) >> 8):02x}"
-    vl = f"0x{(value & 0x00ff):02x}"
+    vh = ((value & 0xff00) >> 8)
+    vl = (value & 0x00ff)
 
     return [vh, vl]
 
@@ -48,7 +48,7 @@ def op_dw(op, table, labels, inst):
         raise ValueError(show_msg("Error", inst, "Wrong data type"))
 
     if value > MAX or value < MIN:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
 
     return byte_fmt(value)
 
@@ -193,7 +193,7 @@ def op_wait(op, table, labels, inst):
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if w_time > MAX or w_time < MIN:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX}ms to {MIN}ms"))
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN}ms to {MAX}ms"))
 
 
     prescale = 0
@@ -457,7 +457,7 @@ def op_set_pwm(op, table, labels, inst):
         raise ValueError(show_msg("Error", inst, f"Wrong data type, int needed"))
 
     if level < MIN or level > MAX:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
 
     value = OP | level
     return byte_fmt(value)
@@ -577,10 +577,10 @@ def op_branch(op, table, labels, inst):
 
     addr = int(labels[nsteps]) - int(inst['prg'])
     if addr > MAX[1] or addr < MIN[1]:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
 
     if nloops < MIN[0] or nloops > MAX[0]:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MAX} to {MIN}"))
+        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
 
     value = OP | nloops << 7 | addr
     return byte_fmt(value)

@@ -42,7 +42,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(f"0x{i:02x}", asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
 
     def test_bin2(self):
         chk_bin = [
@@ -54,7 +54,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(f"0x{i:02x}", asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
 
     def test_bin3(self):
         chk_bin = [
@@ -71,7 +71,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(f"0x{i:02x}", asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
 
 if __name__ == '__main__':
     unittest.main()
