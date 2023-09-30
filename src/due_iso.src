@@ -1,0 +1,12 @@
+all:           	dw             	0000000111111111b   	 
+.segment       	program1       	                    	 
+               	map_addr       	all                 	 
+               	ramp           	1,100               	 
+               	ramp           	rb, pre=0, +rc      	
+               	ramp           	3, -251             	
+               	ramp           	rc, pre=1, -ra      	
+               	end            	                    	 
+.segment       	program2       	                    	 
+               	end            	                    	 
+.segment       	program3       	                    	 
+               	end

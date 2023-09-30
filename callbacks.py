@@ -1,4 +1,11 @@
 #!/bin/env python
+import re
+VARIABLE = {
+    'a': 0,
+    'b': 1,
+    'c': 2,
+    'd': 3,
+}
 
 def byte_fmt(value):
     vh = ((value & 0xff00) >> 8)
@@ -137,25 +144,49 @@ def op_ramp(op, table, labels, inst):
                       | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
     """
     OP_PARAM=table[op]['op']
-    OP_VAR  =0b1000010000000000
+    OP_VAR=table[op]['opv']
     prescale = 0
     sign = 0
     step_time = 0
     no_increment = 0
+    value = 0
 
-    try:
-        ramp_time = float(inst['args'][0])
-        level = int(inst['args'][1])
-    except IndexError as e:
+    param_fail = False
+
+    if len(inst['args']) < 2:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     variable = False
     try:
-        ramp_time = int(ramp_time) * 1000 # for convenienze is bettere in ms
+        ramp_time = int(inst['args'][0]) * 1000 # for convenienze is bettere in ms
+        level = int(inst['args'][1])
     except ValueError as e:
+        param_fail = True
         variable = True
 
-    if not variable:
+    if variable:
+        if len(inst['args']) < 2:
+            raise ValueError(show_msg("Error", inst, "Missing arguments"))
+        for n, a in enumerate(inst['args']):
+            p = re.findall(r"r([abcd])", a.lower())
+            pre = re.findall(r"pre=([0-9])", a.lower())
+            if n == 0:
+                if p:
+                    a0 = p[0]
+            if n == 1:
+                if pre:
+                    try:
+                        prescale = int(pre[0])
+                    except ValueError as e:
+                        raise ValueError(show_msg("Error", inst, "Invalid value for prescale"))
+            if n == 2:
+                if p:
+                    a1 = p[0]
+                if "-" in a:
+                    sign = 1
+
+        value = OP_VAR | (prescale << 5) | (sign << 4) | (VARIABLE[a0] << 2) | VARIABLE[a1]
+    else:
         if level < 0:
             sign = 1
             level = abs(level)
@@ -164,8 +195,8 @@ def op_ramp(op, table, labels, inst):
         if step_time > 31 or step_time < 0:
             step_time = round((float(ramp_time) / float(level)) / float(15.625))
             prescale = 1
+        value = OP_PARAM | (prescale << 14) | (step_time << 9) | (sign << 8) | level
 
-    value = OP_PARAM | (prescale << 14) | (step_time << 9) | (sign << 8) | level
     return byte_fmt(value)
 
 def op_wait(op, table, labels, inst):

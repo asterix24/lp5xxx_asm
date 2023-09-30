@@ -95,60 +95,52 @@ def asm(labels, memory):
 
     return asm_bin + padding
 
+def c_fmt(asm, memory, name):
+    s = ""
+    c = ["const uint8_t %s[]={" % name,]
+    for i in range(32):
+        s = ""
+        idx = 16*i
+        m = []
+        if (idx+16) > len(asm):
+            break
+        m = asm[idx:idx+16]
+        s = ",".join(list(map(lambda x: f"0x{x:02X}", m)))
+        c.append(s)
 
-def hex_fmt(asm, memory, filename=None):
-    asm = asm + [ 0 for i in range((32*16) - len(asm))]
+    c.append("};")
+    d = []
+    for m in memory:
+        if m['op'] == 'segment':
+            d.append(f"0x{m['prg']:02X}")
 
-    f = None
-    if filename is not None:
-        out_filename = f"{name}.hex"
-        f = open(out_filename, 'w')
+    c.append("const uint8_t %s_addr[]={%s};" % (name,",".join(d)))
 
-    for n, i in enumerate(asm):
-        if not n % 16:
-            print()
-            if filename is not None:
-                f.write(f"\n")
-        s = f"{i:02X} "
-        print(s, end="")
-        if filename is not None:
-            f.write(s)
+    h = ["#ifndef",]
+    h.append("#define _%s_H" % name.upper())
+    h.append("extern const uint8_t %s[%s];" % (name, len(asm)))
+    h.append("extern const uint8_t %s_addr[3];" % (name))
+    h.append("/* _%s_H */" % name.upper())
 
-    print()
-    if filename is not None:
-        f.write(f"\n")
+    return c, h
+
+def hex_fmt(asm, memory):
+    out = []
+    s = ""
+    for i in range(32):
+        s = ""
+        idx = 16*i
+        m = [0 for x in range(16)]
+        if (idx+16) <= len(asm):
+            m = asm[idx:idx+16]
+        s = " ".join(list(map(lambda x: f"{x:02X}", m)))
+        out.append(s)
 
     for m in memory:
         if m['op'] == 'segment':
             s = f"@ {m['prg']:02X} {m['args'][0]}"
-            print(s)
-            if filename is not None:
-                f.write(f"{s}\n")
-
-    if filename is not None:
-        f.close()
-
-def c_fmt(asm, memory, name):
-    f = open("%s.c" % name, 'w')
-    h = open("%s.h" % name, 'w')
-
-    name = os.path.basename(name)
-    f.write("const uint8_t %s = {" % name)
-    for n, i in enumerate(asm):
-        if not n % 16:
-            f.write(f"\n")
-        f.write(f"0x{i:02X}, ")
-
-    f.write(f"\n")
-    f.write("};\n")
-
-    f.write("const uint8_t %s_addr = {" % name)
-    for m in memory:
-        if m['op'] == 'segment':
-            f.write(f"0x{m['prg']:02X}, ")
-    f.write("};")
-
-    f.close()
+            out.append(s)
+    return out
 
 if __name__ == "__main__":
     import argparse
@@ -177,12 +169,32 @@ if __name__ == "__main__":
         print(e)
         sys.exit(1)
 
-    out_filename = None
-    name = os.path.splitext(args.src_lst)[0]
+    path_file_name = os.path.splitext(args.src_lst)[0]
+    name = os.path.basename(path_file_name)
+
+    data = hex_fmt(asm_bin, memory)
+    for v in data:
+        print(v)
+
+    c, h = c_fmt(asm_bin, memory, name)
+    for v in c:
+        print(v)
+    for v in h:
+        print(v)
 
     if args.hex_fmt_to_file:
-        hex_fmt(asm_bin, memory, name)
+        f = open(f"{path_file_name}.hex", 'w')
+        for v in data:
+            f.write(v+"\n")
+        f.close()
 
     if args.c_fmt_to_file:
-        c_fmt(asm_bin, memory, name)
+        f = open(f"{path_file_name}.c", 'w')
+        for v in c:
+            f.write(v+"\n")
+        f.close()
+        f = open(f"{path_file_name}.h", 'w')
+        for v in h:
+            f.write(v+"\n")
+        f.close()
 

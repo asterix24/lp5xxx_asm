@@ -73,5 +73,17 @@ class TestASM(unittest.TestCase):
         for n, i in enumerate(chk_bin):
             self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
 
+    def test_bin4(self):
+        chk_bin = [
+        0x01,0xFF,0x9F,0x80,0x28,0x64,0x84,0x06,0x31,0xFB,0x84,0x38,0xC0,0x00,0xC0,0x00,
+        0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+        ]
+        src_name = os.path.join(".", "src", "due_iso.src")
+        src = open(src_name)
+        memory, labels = lp55xx_asm.parse(src)
+        asm_bin = lp55xx_asm.asm(labels, memory)
+        for n, i in enumerate(chk_bin):
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+
 if __name__ == '__main__':
     unittest.main()

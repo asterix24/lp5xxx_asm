@@ -17,7 +17,8 @@ lookup_table = {
 "load_addr": { "callback":op_load_addr, "op":0b1001111100000000, "min":0, "max":127},
 "map_addr":  { "callback":op_map_addr,  "op":0b1001111110000000, "min":0, "max":127},
 
-"ramp":      { "callback":op_ramp,      "op":0b0000000000000000, "min":None, "max":None},
+"ramp":      { "callback":op_ramp,      "op":0b0000000000000000, "min":None, "max":None,
+                                       "opv":0b1000010000000000,"minv":None,"maxv":None},
 "set_pwm":   { "callback":op_set_pwm,   "op":0b0100000000000000, "min":0, "max":255},
 "wait":      { "callback":op_wait,      "op":0b0000000000000000, "min":0.488, "max":484},
 
