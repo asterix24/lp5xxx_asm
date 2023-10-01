@@ -151,8 +151,6 @@ def op_ramp(op, table, labels, inst):
     no_increment = 0
     value = 0
 
-    param_fail = False
-
     if len(inst['args']) < 2:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
@@ -161,7 +159,6 @@ def op_ramp(op, table, labels, inst):
         ramp_time = int(inst['args'][0]) * 1000 # for convenienze is bettere in ms
         level = int(inst['args'][1])
     except ValueError as e:
-        param_fail = True
         variable = True
 
     if variable:
@@ -476,21 +473,34 @@ def op_set_pwm(op, table, labels, inst):
 
     """
     OP=table[op]['op']
+    OP_VAR=table[op]['opv']
     MIN=table[op]['min']
     MAX=table[op]['max']
 
+    variable = False
+    value = 0
     try:
         level = inst['args'][0]
         level = int(level)
     except IndexError as e:
         raise ValueError(show_msg("Error", inst, f"Missing arguments"))
     except ValueError as e:
-        raise ValueError(show_msg("Error", inst, f"Wrong data type, int needed"))
+        variable = True
 
-    if level < MIN or level > MAX:
-        raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
+    if variable:
+        p = re.findall(r"r([abcd])", inst['args'][0].lower())
+        if not p:
+            raise ValueError(show_msg("Error", inst, f"Wrong data type, int needed"))
+        level = p[0]
 
-    value = OP | level
+        value = OP_VAR | VARIABLE[level]
+
+    else:
+        if level < MIN or level > MAX:
+            raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
+
+        value = OP | level
+
     return byte_fmt(value)
 
 def op_end(op, table, labels, inst):

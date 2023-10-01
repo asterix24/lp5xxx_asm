@@ -19,7 +19,8 @@ lookup_table = {
 
 "ramp":      { "callback":op_ramp,      "op":0b0000000000000000, "min":None, "max":None,
                                        "opv":0b1000010000000000,"minv":None,"maxv":None},
-"set_pwm":   { "callback":op_set_pwm,   "op":0b0100000000000000, "min":0, "max":255},
+"set_pwm":   { "callback":op_set_pwm,   "op":0b0100000000000000, "min":0, "max":255,
+                                       "opv":0b1000010001100000,"minv":None,"maxv":None},
 "wait":      { "callback":op_wait,      "op":0b0000000000000000, "min":0.488, "max":484},
 
 "rst":       { "callback":op_reset,     "op":0b0000000000000000, "min":None, "max":None},

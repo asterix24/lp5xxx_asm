@@ -7,6 +7,7 @@ all:           	dw             	0000000111111111b
                	ramp           	rc, pre=1, -ra      	
                	end            	                    	 
 .segment       	program2       	                    	 
+               	set_pwm        	rb
                	end            	                    	 
 .segment       	program3       	                    	 
                	end
