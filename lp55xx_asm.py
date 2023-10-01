@@ -97,7 +97,8 @@ def asm(labels, memory):
 
 def c_fmt(asm, memory, name):
     s = ""
-    c = ["const uint8_t %s[]={" % name,]
+    c = ["#include <%s.h>" % name,]
+    c.append("const uint8_t %s[]={" % name)
     for i in range(32):
         s = ""
         idx = 16*i
@@ -105,7 +106,7 @@ def c_fmt(asm, memory, name):
         if (idx+16) > len(asm):
             break
         m = asm[idx:idx+16]
-        s = ",".join(list(map(lambda x: f"0x{x:02X}", m)))
+        s = ",".join(list(map(lambda x: f"0x{x:02X}", m))) + ","
         c.append(s)
 
     c.append("};")
@@ -116,11 +117,11 @@ def c_fmt(asm, memory, name):
 
     c.append("const uint8_t %s_addr[]={%s};" % (name,",".join(d)))
 
-    h = ["#ifndef",]
-    h.append("#define _%s_H" % name.upper())
+    h = ["#ifndef _%s_H_" % name.upper(),]
+    h.append("#define _%s_H_" % name.upper())
     h.append("extern const uint8_t %s[%s];" % (name, len(asm)))
     h.append("extern const uint8_t %s_addr[3];" % (name))
-    h.append("/* _%s_H */" % name.upper())
+    h.append("#endif /* _%s_H_ */" % name.upper())
 
     return c, h
 
