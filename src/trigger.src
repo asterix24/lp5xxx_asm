@@ -1,0 +1,21 @@
+m0:            	dw             	0000000000000001b   	 
+m1:            	dw             	0000000000000010b   	 
+m2:            	dw             	0000000000000100b   	 
+m3:            	dw             	0000000000001000b   	 
+m4:            	dw             	0000000000010000b   	 
+m5:            	dw             	0000000000100000b   	 
+m6:            	dw             	0000000001000000b   	 
+m7:            	dw             	0000000010000000b   	 
+m8:            	dw             	0000000100000000b   	 
+all:           	dw             	0000000111111111b   	 
+.segment       	program1       	                    	 
+               	trigger        	w{1}                	
+               	trigger        	w{1|2|3|e}s{1|2|3|e}	
+               	end            	                    	 
+.segment       	program2       	                    	 
+               	trigger        	s{1}                	
+               	trigger        	w{2|3|e}s{1}        	
+               	end            	                    	 
+.segment       	program3       	                    	 
+               	trig_clear     	                    	
+               	end         

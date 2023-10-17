@@ -626,3 +626,105 @@ def op_branch(op, table, labels, inst):
     value = OP | nloops << 7 | addr
     return byte_fmt(value)
 
+def op_trigger(op, table, labels, inst):
+    """
+    TRIGGER
+    The wait-for-trigger or send-a-trigger instruction can be used to
+    synchronize operation between the program execution engines. Sending a
+    trigger instruction takes 16 32-kHz clock cycles and waiting for a trigger
+    takes at least 16 32-kHz clock cycles. The receiving engine stores the
+    triggers that have been sent. Received triggers are cleared by the
+    wait-for-trigger instruction or trig_clear instruction. The
+    wait-for-trigger instruction is executed until all the defined triggers
+    have been received. (Note: several triggers can be defined in the same
+    instruction.) The external-trigger input signal must stay low for at least
+    two 32-kHz clock cycles to be executed. The trigger output signal is three
+    32-kHz clock cycles long. The external trigger signal is active-low; for
+    example, when a trigger is sent or received, the pin is pulled to GND.
+    Sending an external trigger is masked; that is, the device which has sent
+    the trigger does not recognize the trigger it sent. If send and wait
+    external triggers are used on the same instruction, the send external
+    trigger is executed first, followed by the wait external trigger.
+
+    | NAME        | VALUE (d) | DESCRIPTION
+    | wait for    | 0-31      | Wait for trigger from the engine(s). Several triggers can be defined in the same instruction.
+    | trigger     |           | Bit [7]: Wait for trigger from engine 1.
+    |             |           | Bit [8]: Wait for trigger from engine 2.
+    |             |           | Bit [9]: Wait for trigger from engine 3.
+    |             |           | Bit [12]: Wait for trigger from GPIO/TRIG/INT pin. 
+    |             |           | Bits [10] and [11] are not used.
+    | Send for    | 0-31      | Send a trigger to the engine(s). Several triggers can be defined in the same instruction.
+    | trigger     |           | Bit [1]: Send trigger to engine 1.
+    |             |           | Bit [2]: Send trigger to engine 2.
+    |             |           | Bit [3]: Send trigger to engine 3.
+    |             |           | Bit [6]: Send trigger to GPIO/TRIG/INT pin.
+    |             |           | Bits [4] and [5]: are not used.
+
+    """
+
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    d = {
+        's': {
+            'bit':{
+                '1':(1 << 1),
+                '2':(1 << 2),
+                '3':(1 << 3),
+                'e':(1 << 6),
+            },
+            'value': 0,
+            'raw': [],
+        },
+        'w': {
+            'bit':{
+                '1':(1 << 7),
+                '2':(1 << 8),
+                '3':(1 << 9),
+                'e':(1 << 12),
+            },
+            'value': 0,
+            'raw': [],
+        }
+    }
+
+    for t in ['w', 's']:
+        for i in inst['args']:
+            try:
+                d[t]['raw'].append(re.findall(r"%s{([123e\|]+)}" % t, i)[0])
+            except IndexError:
+                pass
+
+    if not d['w']['raw'] and not d['s']['raw']:
+        raise ValueError(show_msg("Error", inst, f"Missing parameter"))
+
+    for t in ['w', 's']:
+        if (len(d[t]['raw']) > 1):
+            raise ValueError(show_msg("Error", inst, f"Only one wait clausole you should specify {d[t]['raw']}"))
+
+        if d[t]['raw']:
+            w = d[t]['raw'][0]
+            for v in w.split("|"):
+                v = v.strip()
+                if v and v in d[t]['bit']:
+                    d[t]['value'] |= d[t]['bit'][v]
+
+    value = OP | d['w']['value'] | d['s']['value']
+    return byte_fmt(value)
+
+def op_trig_clear(op, table, labels, inst):
+    """
+    TRIGGER CLEAR
+    The trig_clear instruction clears pending triggers for a single execution
+    engine. Use this instruction in each execution engine at the beginning of
+    program execution to clear any pending triggers. Pending triggers are always
+    cleared whenever the engine mode is in the disabled state or load program to
+    SRAM
+    """
+    OP=table[op]['op']
+    MIN=table[op]['min']
+    MAX=table[op]['max']
+
+    value = OP
+    return byte_fmt(value)

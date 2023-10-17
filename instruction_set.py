@@ -28,6 +28,9 @@ lookup_table = {
 "int":       { "callback":op_int,       "op":0b1100010000000000, "min":None, "max":None},
 "branch":    { "callback":op_branch,    "op":0b1010000000000000, "min":[0,0], "max":[63, 127]},
 
+"trigger":   { "callback":op_trigger,   "op":0b1110000000000000, "min":0, "max":31},
+"trig_clear":{ "callback":op_trig_clear,"op":0b1110000000000000, "min":None, "max":None},
+
 "segment":   { "callback":op_nop,     "op":None, "min":None, "max":None},
 }
 

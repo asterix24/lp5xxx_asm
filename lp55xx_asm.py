@@ -154,6 +154,7 @@ if __name__ == "__main__":
         epilog='Assemblator for led efx programm')
 
     parser.add_argument('src_lst')
+    parser.add_argument('-a', '--append', action="store_true", dest="append_to_file")
     parser.add_argument('-o', '--hex-fmt', action="store_true", dest="hex_fmt_to_file")
     parser.add_argument('-c', '--c-fmt', action="store_true", dest="c_fmt_to_file")
 
