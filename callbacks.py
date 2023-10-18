@@ -156,7 +156,7 @@ def op_ramp(op, table, labels, inst):
 
     variable = False
     try:
-        ramp_time = int(inst['args'][0]) * 1000 # for convenienze is bettere in ms
+        ramp_time = int(inst['args'][0]) * 1000 # for convenience is bettere in ms
         level = int(inst['args'][1])
     except ValueError as e:
         variable = True
@@ -728,3 +728,97 @@ def op_trig_clear(op, table, labels, inst):
 
     value = OP
     return byte_fmt(value)
+
+def __jump(table, op, inst, labels):
+    if len(inst['args']) < 3:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments -"))
+
+    v1 = None
+    v2 = None
+    label = None
+    for n, a in enumerate(inst['args']):
+        if a in labels:
+            label = labels[a]
+
+        p = re.findall(r"r([abcd])", a.lower())
+        if not p:
+            continue
+        p = p[0]
+        if not p in VARIABLE:
+            raise ValueError(show_msg("Error", inst, f"Wrong data type"))
+        if n == 0:
+            v1 = VARIABLE[p] << 2
+        if n == 1:
+            v2 = VARIABLE[p]
+
+
+
+    if v1 is None or v2 is None or label is None:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments, you should: rx[{v1}], rx[{v2}], labelx[{label}]"))
+
+    if label < inst['addr']:
+        raise ValueError(show_msg("Error", inst, f"Label should point forward, jumps skips lines"))
+
+    skip_inst_no = label - inst['addr'] -1
+    if skip_inst_no > table[op]['max'] or skip_inst_no < table[op]['min']:
+        raise ValueError(show_msg("Error", inst, f"Value outside allowed range {table[op]['max']},{table[op]['min']}"))
+
+    return (skip_inst_no << 4 | v1 | v2)
+
+def op_jne(op, table, labels, inst):
+    """
+    JNE, JGE, JL, and JE
+    The LP5569 instruction set includes the following conditional jump
+    instructions: jne (jump if not equal); jge (jump if greater or equal); jl (jump
+    if less); je (jump if equal). If the condition is true, a certain number of
+    instructions are skipped (that is, the program jumps forward to a location
+    relative to the present location). If the condition is false, the next
+    instruction is executed.
+
+    | NAME        | VALUE (d) | DESCRIPTION
+    | Number of instructions   | 0-31      | The number of instructions to be skipped when the statement is true. Note:
+    | to be skipped if         |           | value 0 means redundant code. 
+    | the operation            |           | 
+    | returns true.            |           | 
+    |                          |           | Defines the variable to be used in the test:
+    |  variable 1              |   0-3     | 0 = Local variable A
+    |                          |           | 1 = Local variable B
+    |                          |           | 2 = Global variable C
+    |                          |           | 3 = Global variable D
+    |                          |           | Defines the variable to be used in the test:
+    |  variable 2              |   0-3     | 0 = Local variable A
+    |                          |           | 1 = Local variable B
+    |                          |           | 2 = Global variable C
+    |                          |           | 3 = Global variable D
+    """
+    OP=table[op]['op']
+    value = OP | __jump(table, op, inst, labels)
+    return byte_fmt(value)
+
+def op_jl(op, table, labels, inst):
+    """
+    JNE, JGE, JL, and JE
+    """
+    OP=table[op]['op']
+
+    value = OP | __jump(table, op, inst, labels)
+    return byte_fmt(value)
+
+def op_jge(op, table, labels, inst):
+    """
+    JNE, JGE, JL, and JE
+    """
+    OP=table[op]['op']
+
+    value = OP | __jump(table, op, inst, labels)
+    return byte_fmt(value)
+
+def op_je(op, table, labels, inst):
+    """
+    JNE, JGE, JL, and JE
+    """
+    OP=table[op]['op']
+
+    value = OP | __jump(table, op, inst, labels)
+    return byte_fmt(value)
+

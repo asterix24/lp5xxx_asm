@@ -31,6 +31,11 @@ lookup_table = {
 "trigger":   { "callback":op_trigger,   "op":0b1110000000000000, "min":0, "max":31},
 "trig_clear":{ "callback":op_trig_clear,"op":0b1110000000000000, "min":None, "max":None},
 
+"jne":       { "callback":op_jne,       "op":0b1000100000000000, "min":0, "max":31},
+"jl":        { "callback":op_jl,        "op":0b1000101000000000, "min":0, "max":31},
+"jge":       { "callback":op_jge,       "op":0b1000110000000000, "min":0, "max":31},
+"je":        { "callback":op_je,        "op":0b1000111000000000, "min":0, "max":31},
+
 "segment":   { "callback":op_nop,     "op":None, "min":None, "max":None},
 }
 
