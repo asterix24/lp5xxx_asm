@@ -12,7 +12,7 @@ def parse(src):
     memory = []
 
     segment_addr = 0
-    line_no = 0
+    line_no = 1
     for line in src:
         # Skip blank line and strip
         # Remove comment string from line
