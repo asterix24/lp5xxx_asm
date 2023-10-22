@@ -36,6 +36,12 @@ lookup_table = {
 "jge":       { "callback":op_jge,       "op":0b1000110000000000, "min":0, "max":31},
 "je":        { "callback":op_je,        "op":0b1000111000000000, "min":0, "max":31},
 
+"ld":        { "callback":op_ld,        "op":0b1001000000000000, "min":[0,0], "max":[2,255]},
+"add":       { "callback":op_add,       "op":0b1001000100000000, "min":[0,0], "max":[2,255],
+                                       "opv":0b1001001100000000,"minv":[0,0],"maxv":[3,3]},
+"sub":       { "callback":op_sub,       "op":0b1001001000000000, "min":[0,0], "max":[2,255],
+                                       "opv":0b1001001100010000,"minv":[0,0],"maxv":[3,3]},
+
 "segment":   { "callback":op_nop,     "op":None, "min":None, "max":None},
 }
 

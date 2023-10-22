@@ -775,11 +775,11 @@ def op_jne(op, table, labels, inst):
     relative to the present location). If the condition is false, the next
     instruction is executed.
 
-    | NAME        | VALUE (d) | DESCRIPTION
+    | NAME                     | VALUE (d) | DESCRIPTION
     | Number of instructions   | 0-31      | The number of instructions to be skipped when the statement is true. Note:
     | to be skipped if         |           | value 0 means redundant code. 
-    | the operation            |           | 
-    | returns true.            |           | 
+    | the operation            |           |
+    | returns true.            |           |
     |                          |           | Defines the variable to be used in the test:
     |  variable 1              |   0-3     | 0 = Local variable A
     |                          |           | 1 = Local variable B
@@ -821,4 +821,131 @@ def op_je(op, table, labels, inst):
 
     value = OP | __jump(table, op, inst, labels)
     return byte_fmt(value)
+
+def op_ld(op, table, labels, inst):
+    """
+    LD
+    This instruction is used to assign a value into a variable; the previous value
+    in that variable is overwritten. Each of the engines has two local variables,
+    called A and B. The variable C is a global variable.
+
+    | NAME               | VALUE (d) | DESCRIPTION
+    | target variable    | 0-2       | 0 = Variable A
+    |                    |           | 1 = Variable B
+    |                    |           | 2 = Variable C
+    | 8-bit value        | 0-255     | Variable value
+    """
+    OP=table[op]['op']
+
+    if len(inst['args']) < 2:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
+
+    try:
+        dest = re.findall(r"r([abcd])", inst['args'][0].lower())
+        if not dest[0] in VARIABLE:
+            raise ValueError(show_msg("Error", inst, f"Wrong data type {a}"))
+        dest = VARIABLE[dest[0]]
+        val = int(inst['args'][1])
+    except ValueError:
+        raise ValueError(show_msg("Error", inst, f"Invalid argument"))
+
+    if val < table[op]['min'][1] and val > table[op]['max'][1]:
+        raise ValueError(show_msg("Error", inst, f"Destination reg invalid range [{table[op]['min'][1]}] [{table[op]['max'][1]}]"))
+
+    value = OP | dest << 10 | val
+    return byte_fmt(value)
+
+def __alu(op, table, inst):
+    if len(inst['args']) < 2:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
+
+    def __varExtract(a):
+        p = re.findall(r"r([abcd])", a.lower())
+        if p:
+            p = p[0]
+            if not p in VARIABLE:
+                raise ValueError(show_msg("Error", inst, f"Wrong data type {a}"))
+            return VARIABLE[p]
+        return None
+
+    v1 = None
+    v2 = None
+    v3 = None
+
+    for n, a in enumerate(inst['args']):
+        if n == 0:
+            v1 = __varExtract(a)
+        if n == 1:
+            v2 = __varExtract(a)
+            if v2 is None:
+                try:
+                    v2 = int(a)
+                except ValueError:
+                    raise ValueError(show_msg("Error", inst, f"Wrong data type {a}"))
+        if n == 2:
+            v3 = __varExtract(a)
+
+    value = None
+    if v1 is None or v2 is None:
+        raise ValueError(show_msg("Error", inst, f"Missing arguments, you should: rx[{v1}], rx/int[{v2}]"))
+
+    OP=table[op]['op']
+    value = OP | v1 << 10 | v2
+
+    if v3 is not None:
+        OP=table[op]['opv']
+        value = OP | v1 << 10 | v2 << 2 | v3
+
+    return value
+
+def op_add(op, table, labels, inst):
+    """
+    ADD
+    This operator either adds an 8-bit value to the current value of the target
+    variable, or adds the value of variable 1 (A, B, C, or D) to the value of
+    variable 2 (A, B, C, or D) and stores the result in the register of
+    variable A, B, or C. Variables overflow from 255 to 0.
+
+    | NAME               | VALUE (d) | DESCRIPTION
+    | target variable    | 0-2       | 0 = Variable A
+    |                    |           | 1 = Variable B
+    |                    |           | 2 = Variable C
+    | 8-bit value        | 0-255     | Variable value
+    |  variable 1        |   0-3     | 0 = Local variable A
+    |                    |           | 1 = Local variable B
+    |                    |           | 2 = Global variable C
+    |                    |           | 3 = Global variable D
+    |                    |           | Defines the variable to be used in the test:
+    |  variable 2        |   0-3     | 0 = Local variable A
+    |                    |           | 1 = Local variable B
+    |                    |           | 2 = Global variable C
+    |                    |           | 3 = Global variable D
+    """
+    return byte_fmt(__alu(op, table, inst))
+
+def op_sub(op, table, labels, inst):
+    """
+    SUB
+    The SUB operator either subtracts an 8-bit value from the current value of
+    the target variable, or subtracts the value of variable 2 (A, B, C, or D)
+    from the value of variable 1 (A, B, C, or D) and stores the result in the
+    register of the target variable (A, B, or C). Variables overflow from 0 to
+    255.
+
+    | NAME               | VALUE (d) | DESCRIPTION
+    | target variable    | 0-2       | 0 = Variable A
+    |                    |           | 1 = Variable B
+    |                    |           | 2 = Variable C
+    | 8-bit value        | 0-255     | Variable value
+    |  variable 1        |   0-3     | 0 = Local variable A
+    |                    |           | 1 = Local variable B
+    |                    |           | 2 = Global variable C
+    |                    |           | 3 = Global variable D
+    |                    |           | Defines the variable to be used in the test:
+    |  variable 2        |   0-3     | 0 = Local variable A
+    |                    |           | 1 = Local variable B
+    |                    |           | 2 = Global variable C
+    |                    |           | 3 = Global variable D
+    """
+    return byte_fmt(__alu(op, table, inst))
 

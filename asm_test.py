@@ -42,7 +42,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
 
     def test_bin2(self):
         chk_bin = [
@@ -54,7 +54,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
 
     def test_bin3(self):
         chk_bin = [
@@ -71,7 +71,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
 
     def test_bin4(self):
         chk_bin = [
@@ -83,7 +83,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
 
     def test_bin4(self):
         chk_bin = [
@@ -96,7 +96,7 @@ class TestASM(unittest.TestCase):
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
         for n, i in enumerate(chk_bin):
-            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}]")
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
 
     def test_bin5(self):
         chk_bin = [
@@ -105,6 +105,19 @@ class TestASM(unittest.TestCase):
         0x8A,0x14,0x88,0x0D,0x40,0xF4,0xC0,0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00
         ]
         src_name = os.path.join(".", "src", "jump.src")
+        src = open(src_name)
+        memory, labels = lp55xx_asm.parse(src)
+        asm_bin = lp55xx_asm.asm(labels, memory)
+        for n, i in enumerate(chk_bin):
+            self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
+
+    def test_bin6(self):
+        chk_bin = [
+        0x00,0x01,0x00,0x02,0x00,0x04,0x00,0x08,0x00,0x10,0x00,0x20,0x00,0x40,0x00,0x80,
+        0x01,0x00,0x01,0xFF,0x40,0xF0,0x93,0x0E,0x97,0x11,0x98,0x19,0x40,0xFA,0xC0,0x00,
+        0x40,0xFD,0x91,0x13,0x96,0x53,0x40,0xF4,0xC0,0x00,0x93,0x00,0xC0,0x00,0x00,0x00
+        ]
+        src_name = os.path.join(".", "src", "alu.src")
         src = open(src_name)
         memory, labels = lp55xx_asm.parse(src)
         asm_bin = lp55xx_asm.asm(labels, memory)
