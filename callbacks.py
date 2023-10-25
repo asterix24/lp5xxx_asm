@@ -239,7 +239,7 @@ def op_wait(op, table, labels, inst):
     return byte_fmt(value)
 
 
-def op_load_start(op, table, abels, inst):
+def op_load_start(op, table, labels, inst):
     """
     LOAD_START and LOAD_END
     The load_start and load_end instructions define the mapping table locations in SRAM.
@@ -247,8 +247,22 @@ def op_load_start(op, table, abels, inst):
     | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
     """
     OP = table[op]['op']
+    MAX = table[op]['max']
+    MIN = table[op]['min']
 
-    value = 0
+    try:
+        label = inst['args'][0]
+    except IndexError:
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
+
+    if label not in labels:
+        raise ValueError(show_msg("Error", inst, "No such label in source"))
+
+    addr = int(labels[label])
+    if addr < MIN or addr > MAX:
+        raise ValueError(show_msg("Error", inst, "Wrong address for label"))
+
+    value = OP | label
     return byte_fmt(value)
 
 
@@ -330,7 +344,17 @@ def op_map_sel(op, table, labels, inst):
     MIN = table[op]['min']
     MAX = table[op]['max']
 
-    value = 0
+    try:
+        drv = int(inst['args'][0])
+    except IndexError:
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
+    except ValueError:
+        raise ValueError(show_msg("Error", inst, "Wrong data type"))
+
+    if drv < MIN or drv > MAX:
+        raise ValueError(show_msg("Error", inst, "Wrong address for led"))
+
+    value = OP | drv
     return byte_fmt(value)
 
 
