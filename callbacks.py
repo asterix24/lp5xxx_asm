@@ -7,11 +7,13 @@ VARIABLE = {
     'd': 3,
 }
 
+
 def byte_fmt(value):
     vh = ((value & 0xff00) >> 8)
     vl = (value & 0x00ff)
 
     return [vh, vl]
+
 
 def show_msg(flag, ctx, msg):
     line = "\n\n"
@@ -31,33 +33,36 @@ def show_msg(flag, ctx, msg):
 
     return line
 
+
 def op_nop(op, table, labels, inst):
     print(f"op_nop: {op}")
     return []
 
+
 def op_dw(op, table, labels, inst):
-    MAX=table[op]["max"]
-    MIN=table[op]["min"]
+    MAX = table[op]["max"]
+    MIN = table[op]["min"]
 
     try:
         value = inst['args'][0]
-    except IndexError as e:
+    except IndexError:
         raise ValueError(show_msg("Error", inst, "Missing data"))
 
     try:
         if "b" in value:
-            value = int(value.replace("b",""),2)
+            value = int(value.replace("b", ""), 2)
         elif "0x" in value:
-            value = int(value,16)
+            value = int(value, 16)
         else:
             value = int(value)
-    except ValueError as e:
+    except ValueError:
         raise ValueError(show_msg("Error", inst, "Wrong data type"))
 
     if value > MAX or value < MIN:
         raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN} to {MAX}"))
 
     return byte_fmt(value)
+
 
 def op_map_addr(op, table, labels, inst):
     """
@@ -71,17 +76,17 @@ def op_map_addr(op, table, labels, inst):
     |SRAM address | 0–127    | SRAM address containing mapping data restricted to lower half of memory.
 
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     try:
         args = inst['args'][0]
-    except IndexError as e:
+    except IndexError:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if args not in labels:
-        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
+        raise ValueError(show_msg("Error", inst, "No such label found in code"))
 
     addr = int(labels[args])
     if addr > MAX or addr < MIN:
@@ -89,6 +94,7 @@ def op_map_addr(op, table, labels, inst):
 
     value = OP | addr
     return byte_fmt(value)
+
 
 def op_ramp(op, table, labels, inst):
     """
@@ -139,16 +145,15 @@ def op_ramp(op, table, labels, inst):
     sign              | Numeric  | 0        | Increase PWM output
                       |          | 1        | Decrease PWM output
     step time         | Numeric  | 1-31     | One ramp increment done is in step time × prescale.
-                      | Variable | 0-3      |  Value in the variable A, B, C, or D must be from 
+                      | Variable | 0-3      |  Value in the variable A, B, C, or D must be from
     no. of increments | Numeric  | 0-255    |  1 to 31 for correct operation.
                       | Variable | 0-3      | The number of ramp cycles. Variables A to D as input.
     """
-    OP_PARAM=table[op]['op']
-    OP_VAR=table[op]['opv']
+    OP_PARAM = table[op]['op']
+    OP_VAR = table[op]['opv']
     prescale = 0
     sign = 0
     step_time = 0
-    no_increment = 0
     value = 0
 
     if len(inst['args']) < 2:
@@ -156,9 +161,9 @@ def op_ramp(op, table, labels, inst):
 
     variable = False
     try:
-        ramp_time = int(inst['args'][0]) * 1000 # for convenience is bettere in ms
+        ramp_time = int(inst['args'][0]) * 1000  # for convenience is bettere in ms
         level = int(inst['args'][1])
-    except ValueError as e:
+    except ValueError:
         variable = True
 
     if variable:
@@ -174,7 +179,7 @@ def op_ramp(op, table, labels, inst):
                 if pre:
                     try:
                         prescale = int(pre[0])
-                    except ValueError as e:
+                    except ValueError:
                         raise ValueError(show_msg("Error", inst, "Invalid value for prescale"))
             if n == 2:
                 if p:
@@ -195,6 +200,7 @@ def op_ramp(op, table, labels, inst):
         value = OP_PARAM | (prescale << 14) | (step_time << 9) | (sign << 8) | level
 
     return byte_fmt(value)
+
 
 def op_wait(op, table, labels, inst):
     """
@@ -217,12 +223,11 @@ def op_wait(op, table, labels, inst):
 
     try:
         w_time = float(inst['args'][0]) * 1000
-    except IndexError as e:
+    except IndexError:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if w_time > MAX or w_time < MIN:
         raise ValueError(show_msg("Error", inst, f"Invalid valid range is {MIN}ms to {MAX}ms"))
-
 
     prescale = 0
     value = round(float(w_time) / LOW_PRESCALE)
@@ -233,6 +238,7 @@ def op_wait(op, table, labels, inst):
     value = OP | (prescale << 14) | (value << 9)
     return byte_fmt(value)
 
+
 def op_load_start(op, table, abels, inst):
     """
     LOAD_START and LOAD_END
@@ -240,12 +246,11 @@ def op_load_start(op, table, abels, inst):
     | NAME         | VALUE (d) | DESCRIPTION                                                           |
     | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     value = 0
     return byte_fmt(value)
+
 
 def op_load_end(op, table, labels, inst):
     """
@@ -254,25 +259,25 @@ def op_load_end(op, table, labels, inst):
     | NAME         | VALUE (d) | DESCRIPTION                                                           |
     | SRAM address | 0–127     | Mapping table start or end address restricted to lower half of memory |
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     try:
         label = inst['args'][0]
-    except IndexError as e:
+    except IndexError:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
-    if not label in labels:
+    if label not in labels:
         raise ValueError(show_msg("Error", inst, "No such lable found in source"))
 
     addr = int(labels[label])
     if addr < MIN or addr > MAX:
         raise ValueError(show_msg("Error", inst, "Wrong address for labels"))
 
-
     value = OP | addr
     return byte_fmt(value)
+
 
 def op_map_start(op, table, labels, inst):
     """
@@ -284,25 +289,25 @@ def op_map_start(op, table, labels, inst):
     | SRAM address | 0–127     |  Mapping table start address restricted to lower half of memory.|
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     try:
         label = inst['args'][0]
-    except IndexError as e:
+    except IndexError:
         raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
-    if not label in labels:
+    if label not in labels:
         raise ValueError(show_msg("Error", inst, "No such label in source"))
 
     addr = int(labels[label])
     if addr < MIN or addr > MAX:
         raise ValueError(show_msg("Error", inst, "Wrong address for label"))
 
-
     value = OP | addr
     return byte_fmt(value)
+
 
 def op_map_sel(op, table, labels, inst):
     """
@@ -321,12 +326,13 @@ def op_map_sel(op, table, labels, inst):
 
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     value = 0
     return byte_fmt(value)
+
 
 def op_map_clr(op, table, labels, inst):
     """
@@ -335,15 +341,13 @@ def op_map_clr(op, table, labels, inst):
     has been released from an LED, the PWM register value still controls the
     LED brightness.
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
-
+    OP = table[op]['op']
     if len(inst['args'] > 0):
         raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
+
 
 def op_map_next(op, table, labels, inst):
     """
@@ -358,15 +362,14 @@ def op_map_next(op, table, labels, inst):
     from an LED, the value in the PWM register still controls the LED
     brightness.
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args']) > 0:
         raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
+
 
 def op_map_prev(op, table, labels, inst):
     """
@@ -380,15 +383,14 @@ def op_map_prev(op, table, labels, inst):
     the mapping has been released from an LED, the value in the PWM register still
     controls the LED brightness.
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args']) > 0:
         raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
+
 
 def op_load_next(op, table, labels, inst):
     """
@@ -398,9 +400,7 @@ def op_load_next(op, table, labels, inst):
     engine-to-LED-driver connection is not updated.
 
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args'] > 0):
         raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
@@ -416,15 +416,14 @@ def op_load_prev(op, table, labels, inst):
     set. The index pointer is set to point to the previous row and the
     engine-to-LED-driver connection is not updated.
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args'] > 0):
         raise ValueError(show_msg("Error", inst, "No arguments needs for this command"))
 
     value = OP
     return byte_fmt(value)
+
 
 def op_load_addr(op, table, labels, inst):
     """
@@ -436,24 +435,25 @@ def op_load_addr(op, table, labels, inst):
     | NAME        | VALUE (d) | DESCRIPTION                               |
     | SRAM address| 0–127     | address containing mapping data restricted to lower half of memory|
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     try:
         args = inst['args'][0]
-    except IndexError as e:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
+    except IndexError:
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     if args not in labels:
-        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
+        raise ValueError(show_msg("Error", inst, "No such label found in code"))
 
     addr = int(labels[args])
     if addr > MAX or addr < MIN:
-        raise ValueError(show_msg("Error", inst, f"Invalid address"))
+        raise ValueError(show_msg("Error", inst, "Invalid address"))
 
     value = OP | addr
     return byte_fmt(value)
+
 
 def op_set_pwm(op, table, labels, inst):
     """
@@ -472,25 +472,25 @@ def op_set_pwm(op, table, labels, inst):
 
 
     """
-    OP=table[op]['op']
-    OP_VAR=table[op]['opv']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    OP_VAR = table[op]['opv']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     variable = False
     value = 0
     try:
         level = inst['args'][0]
         level = int(level)
-    except IndexError as e:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
-    except ValueError as e:
+    except IndexError:
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
+    except ValueError:
         variable = True
 
     if variable:
         p = re.findall(r"r([abcd])", inst['args'][0].lower())
         if not p:
-            raise ValueError(show_msg("Error", inst, f"Wrong data type, int needed"))
+            raise ValueError(show_msg("Error", inst, "Wrong data type, int needed"))
         level = p[0]
 
         value = OP_VAR | VARIABLE[level]
@@ -502,6 +502,7 @@ def op_set_pwm(op, table, labels, inst):
         value = OP | level
 
     return byte_fmt(value)
+
 
 def op_end(op, table, labels, inst):
     """
@@ -521,9 +522,7 @@ def op_end(op, table, labels, inst):
     |       |           |  0000 0000b.
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     i = 0
     r = 0
@@ -534,10 +533,11 @@ def op_end(op, table, labels, inst):
         if "r" in a.lower():
             r = 1
         if not a.lower() in ['i', 'r']:
-            raise ValueError(show_msg("Error", inst, f"Wrong arguments valid are [i, r]"))
+            raise ValueError(show_msg("Error", inst, f"Wrong arguments valid are {i, r}"))
 
     value = OP | i << 12 | r << 11
     return byte_fmt(value)
+
 
 def op_reset(op, table, labels, inst):
     """
@@ -549,15 +549,14 @@ def op_reset(op, table, labels, inst):
     which is the rst instruction.
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args']) > 0:
         raise ValueError(f"No arguments needs for this command {inst}")
 
     value = OP
     return byte_fmt(value)
+
 
 def op_int(op, table, labels, inst):
     """
@@ -568,15 +567,14 @@ def op_int(op, table, labels, inst):
 
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     if len(inst['args']) > 0:
         raise ValueError(f"No arguments needs for this command {inst}")
 
     value = OP
     return byte_fmt(value)
+
 
 def op_branch(op, table, labels, inst):
     """
@@ -601,20 +599,20 @@ def op_branch(op, table, labels, inst):
     |             |           | 3 = Global variable D
 
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
+    MIN = table[op]['min']
+    MAX = table[op]['max']
 
     try:
         nloops = int(inst['args'][0])
         nsteps = inst['args'][1]
-    except IndexError as e:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
-    except ValueError as e:
-        raise ValueError(show_msg("Error", inst, f"Wrong data type"))
+    except IndexError:
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
+    except ValueError:
+        raise ValueError(show_msg("Error", inst, "Wrong data type"))
 
     if nsteps not in labels:
-        raise ValueError(show_msg("Error", inst, f"No such label found in code"))
+        raise ValueError(show_msg("Error", inst, "No such label found in code"))
 
     addr = int(labels[nsteps]) - int(inst['prg'])
     if addr > MAX[1] or addr < MIN[1]:
@@ -625,6 +623,7 @@ def op_branch(op, table, labels, inst):
 
     value = OP | nloops << 7 | addr
     return byte_fmt(value)
+
 
 def op_trigger(op, table, labels, inst):
     """
@@ -651,7 +650,7 @@ def op_trigger(op, table, labels, inst):
     | trigger     |           | Bit [7]: Wait for trigger from engine 1.
     |             |           | Bit [8]: Wait for trigger from engine 2.
     |             |           | Bit [9]: Wait for trigger from engine 3.
-    |             |           | Bit [12]: Wait for trigger from GPIO/TRIG/INT pin. 
+    |             |           | Bit [12]: Wait for trigger from GPIO/TRIG/INT pin.
     |             |           | Bits [10] and [11] are not used.
     | Send for    | 0-31      | Send a trigger to the engine(s). Several triggers can be defined in the same instruction.
     | trigger     |           | Bit [1]: Send trigger to engine 1.
@@ -662,27 +661,25 @@ def op_trigger(op, table, labels, inst):
 
     """
 
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     d = {
         's': {
-            'bit':{
-                '1':(1 << 1),
-                '2':(1 << 2),
-                '3':(1 << 3),
-                'e':(1 << 6),
+            'bit': {
+                '1': (1 << 1),
+                '2': (1 << 2),
+                '3': (1 << 3),
+                'e': (1 << 6),
             },
             'value': 0,
             'raw': [],
         },
         'w': {
-            'bit':{
-                '1':(1 << 7),
-                '2':(1 << 8),
-                '3':(1 << 9),
-                'e':(1 << 12),
+            'bit': {
+                '1': (1 << 7),
+                '2': (1 << 8),
+                '3': (1 << 9),
+                'e': (1 << 12),
             },
             'value': 0,
             'raw': [],
@@ -697,7 +694,7 @@ def op_trigger(op, table, labels, inst):
                 pass
 
     if not d['w']['raw'] and not d['s']['raw']:
-        raise ValueError(show_msg("Error", inst, f"Missing parameter"))
+        raise ValueError(show_msg("Error", inst, "Missing parameter"))
 
     for t in ['w', 's']:
         if (len(d[t]['raw']) > 1):
@@ -713,6 +710,7 @@ def op_trigger(op, table, labels, inst):
     value = OP | d['w']['value'] | d['s']['value']
     return byte_fmt(value)
 
+
 def op_trig_clear(op, table, labels, inst):
     """
     TRIGGER CLEAR
@@ -722,16 +720,15 @@ def op_trig_clear(op, table, labels, inst):
     cleared whenever the engine mode is in the disabled state or load program to
     SRAM
     """
-    OP=table[op]['op']
-    MIN=table[op]['min']
-    MAX=table[op]['max']
+    OP = table[op]['op']
 
     value = OP
     return byte_fmt(value)
 
+
 def __jump(table, op, inst, labels):
     if len(inst['args']) < 3:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments -"))
+        raise ValueError(show_msg("Error", inst, "Missing arguments -"))
 
     v1 = None
     v2 = None
@@ -744,26 +741,25 @@ def __jump(table, op, inst, labels):
         if not p:
             continue
         p = p[0]
-        if not p in VARIABLE:
-            raise ValueError(show_msg("Error", inst, f"Wrong data type"))
+        if p not in VARIABLE:
+            raise ValueError(show_msg("Error", inst, "Wrong data type"))
         if n == 0:
             v1 = VARIABLE[p] << 2
         if n == 1:
             v2 = VARIABLE[p]
 
-
-
     if v1 is None or v2 is None or label is None:
         raise ValueError(show_msg("Error", inst, f"Missing arguments, you should: rx[{v1}], rx[{v2}], labelx[{label}]"))
 
     if label < inst['addr']:
-        raise ValueError(show_msg("Error", inst, f"Label should point forward, jumps skips lines"))
+        raise ValueError(show_msg("Error", inst, "Label should point forward, jumps skips lines"))
 
-    skip_inst_no = label - inst['addr'] -1
+    skip_inst_no = label - inst['addr'] - 1
     if skip_inst_no > table[op]['max'] or skip_inst_no < table[op]['min']:
         raise ValueError(show_msg("Error", inst, f"Value outside allowed range {table[op]['max']},{table[op]['min']}"))
 
     return (skip_inst_no << 4 | v1 | v2)
+
 
 def op_jne(op, table, labels, inst):
     """
@@ -777,7 +773,7 @@ def op_jne(op, table, labels, inst):
 
     | NAME                     | VALUE (d) | DESCRIPTION
     | Number of instructions   | 0-31      | The number of instructions to be skipped when the statement is true. Note:
-    | to be skipped if         |           | value 0 means redundant code. 
+    | to be skipped if         |           | value 0 means redundant code.
     | the operation            |           |
     | returns true.            |           |
     |                          |           | Defines the variable to be used in the test:
@@ -791,36 +787,40 @@ def op_jne(op, table, labels, inst):
     |                          |           | 2 = Global variable C
     |                          |           | 3 = Global variable D
     """
-    OP=table[op]['op']
+    OP = table[op]['op']
     value = OP | __jump(table, op, inst, labels)
     return byte_fmt(value)
+
 
 def op_jl(op, table, labels, inst):
     """
     JNE, JGE, JL, and JE
     """
-    OP=table[op]['op']
+    OP = table[op]['op']
 
     value = OP | __jump(table, op, inst, labels)
     return byte_fmt(value)
+
 
 def op_jge(op, table, labels, inst):
     """
     JNE, JGE, JL, and JE
     """
-    OP=table[op]['op']
+    OP = table[op]['op']
 
     value = OP | __jump(table, op, inst, labels)
     return byte_fmt(value)
+
 
 def op_je(op, table, labels, inst):
     """
     JNE, JGE, JL, and JE
     """
-    OP=table[op]['op']
+    OP = table[op]['op']
 
     value = OP | __jump(table, op, inst, labels)
     return byte_fmt(value)
+
 
 def op_ld(op, table, labels, inst):
     """
@@ -835,35 +835,38 @@ def op_ld(op, table, labels, inst):
     |                    |           | 2 = Variable C
     | 8-bit value        | 0-255     | Variable value
     """
-    OP=table[op]['op']
+    OP = table[op]['op']
 
     if len(inst['args']) < 2:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     try:
         dest = re.findall(r"r([abcd])", inst['args'][0].lower())
         if not dest[0] in VARIABLE:
-            raise ValueError(show_msg("Error", inst, f"Wrong data type {a}"))
+            raise ValueError(show_msg("Error", inst, f"Wrong data type {dest}"))
         dest = VARIABLE[dest[0]]
         val = int(inst['args'][1])
     except ValueError:
-        raise ValueError(show_msg("Error", inst, f"Invalid argument"))
+        raise ValueError(show_msg("Error", inst, "Invalid argument"))
 
     if val < table[op]['min'][1] and val > table[op]['max'][1]:
-        raise ValueError(show_msg("Error", inst, f"Destination reg invalid range [{table[op]['min'][1]}] [{table[op]['max'][1]}]"))
+        raise ValueError(show_msg("Error", inst,
+                                  f"Destination reg invalid range [{table[op]['min'][1]}] \
+                                  [{table[op]['max'][1]}]"))
 
     value = OP | dest << 10 | val
     return byte_fmt(value)
 
+
 def __alu(op, table, inst):
     if len(inst['args']) < 2:
-        raise ValueError(show_msg("Error", inst, f"Missing arguments"))
+        raise ValueError(show_msg("Error", inst, "Missing arguments"))
 
     def __varExtract(a):
         p = re.findall(r"r([abcd])", a.lower())
         if p:
             p = p[0]
-            if not p in VARIABLE:
+            if p not in VARIABLE:
                 raise ValueError(show_msg("Error", inst, f"Wrong data type {a}"))
             return VARIABLE[p]
         return None
@@ -889,14 +892,15 @@ def __alu(op, table, inst):
     if v1 is None or v2 is None:
         raise ValueError(show_msg("Error", inst, f"Missing arguments, you should: rx[{v1}], rx/int[{v2}]"))
 
-    OP=table[op]['op']
+    OP = table[op]['op']
     value = OP | v1 << 10 | v2
 
     if v3 is not None:
-        OP=table[op]['opv']
+        OP = table[op]['opv']
         value = OP | v1 << 10 | v2 << 2 | v3
 
     return value
+
 
 def op_add(op, table, labels, inst):
     """
@@ -923,6 +927,7 @@ def op_add(op, table, labels, inst):
     """
     return byte_fmt(__alu(op, table, inst))
 
+
 def op_sub(op, table, labels, inst):
     """
     SUB
@@ -948,4 +953,3 @@ def op_sub(op, table, labels, inst):
     |                    |           | 3 = Global variable D
     """
     return byte_fmt(__alu(op, table, inst))
-

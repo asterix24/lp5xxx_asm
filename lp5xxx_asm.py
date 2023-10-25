@@ -22,12 +22,12 @@ def parse(src):
         line = re.sub(r";.*$", "", line)
 
         inst = {
-            "line_no":line_no,
+            "line_no": line_no,
             "line": line,
             "addr": pc_instruction,
             "prg": None,
             "op": None,
-            "args":[]
+            "args": []
         }
 
         line_no += 1
@@ -46,7 +46,7 @@ def parse(src):
                 if label in labels:
                     raise ValueError(show_msg("Error", inst, "Wrong label"))
 
-                labels[label.group().replace(":","")] = pc_instruction
+                labels[label.group().replace(":", "")] = pc_instruction
                 is_label = True
 
             seg = re.search(r"^\.\w+", tok)
@@ -73,6 +73,7 @@ def parse(src):
 
     return memory, labels
 
+
 def asm(labels, memory):
     asm_bin = []
     for m in memory:
@@ -87,13 +88,14 @@ def asm(labels, memory):
         complie_op = lookup_table[m['op']]['callback']
         asm_bin += complie_op(m['op'], lookup_table, labels, m)
 
-        l = len(asm_bin)
-        if l % 16:
-            l = (int(l/16)+1)*16
+        ln = len(asm_bin)
+        if ln % 16:
+            ln = (int(ln/16)+1)*16
 
-        padding = [0 for i in range(l - len(asm_bin))]
+        padding = [0 for i in range(ln - len(asm_bin))]
 
     return asm_bin + padding
+
 
 def c_fmt(asm, memory, name):
     s = ""
@@ -115,7 +117,7 @@ def c_fmt(asm, memory, name):
         if m['op'] == 'segment':
             d.append(f"0x{m['prg']:02X}")
 
-    c.append("const uint8_t %s_addr[]={%s};" % (name,",".join(d)))
+    c.append("const uint8_t %s_addr[]={%s};" % (name, ",".join(d)))
 
     h = ["#ifndef _%s_H_" % name.upper(),]
     h.append("#define _%s_H_" % name.upper())
@@ -124,6 +126,7 @@ def c_fmt(asm, memory, name):
     h.append("#endif /* _%s_H_ */" % name.upper())
 
     return c, h
+
 
 def hex_fmt(asm, memory):
     out = []
@@ -142,6 +145,7 @@ def hex_fmt(asm, memory):
             s = f"@ {m['prg']:02X} {m['args'][0]}"
             out.append(s)
     return out
+
 
 if __name__ == "__main__":
     import argparse
@@ -180,18 +184,18 @@ if __name__ == "__main__":
     data = hex_fmt(asm_bin, memory)
     c, h = c_fmt(asm_bin, memory, name)
 
-    print(f"\nHex Output")
+    print("\nHex Output")
     print("-"*80)
     for v in data:
         print(v)
-    print("-"*80,"\n")
+    print("-"*80, "\n")
     print("\nC output")
     print("-"*80)
     for v in c:
         print(v)
     for v in h:
         print(v)
-    print("-"*80,"\n")
+    print("-"*80, "\n")
 
     hex_name = os.path.join(src_path, f"{name}.hex")
     with open(hex_name, 'w') as f:
@@ -204,5 +208,3 @@ if __name__ == "__main__":
             f.write("\n".join(c))
         with open(h_name, 'w') as f:
             f.write("\n".join(h))
-
-
