@@ -153,50 +153,56 @@ if __name__ == "__main__":
         description='ASM for Texas led driver LP55xx ic',
         epilog='Assemblator for led efx programm')
 
-    parser.add_argument('src_lst')
-    parser.add_argument('-a', '--append', action="store_true", dest="append_to_file")
-    parser.add_argument('-o', '--hex-fmt', action="store_true", dest="hex_fmt_to_file")
-    parser.add_argument('-c', '--c-fmt', action="store_true", dest="c_fmt_to_file")
+    parser.add_argument('src', help="Engine Led programm source file")
+    parser.add_argument('-o', '--out-file', dest="out_file_name", default=None,
+                        help="The output file name, default is the same src-file")
+    parser.add_argument('-c', '--c-fmt', action="store_true",
+                        dest="c_fmt_to_file",
+                        help="Generate .c and .h source file")
 
     try:
         args = parser.parse_args()
-        print(args.src_lst)
-
-        src = open(args.src_lst)
+        src = open(args.src)
         memory, labels = parse(src)
-        for l in labels:
-            print(f"{l}: {labels[l]:02X}")
         asm_bin = asm(labels, memory)
     except ValueError as e:
         print(e)
         sys.exit(1)
 
-    path_file_name = os.path.splitext(args.src_lst)[0]
-    name = os.path.basename(path_file_name)
+    src_path, src_name = os.path.split(args.src)
+    name, _ = os.path.splitext(args.src)
+    name = os.path.basename(name)
+    if args.out_file_name is not None:
+        src_path, src_name = os.path.split(args.out_file_name)
+        name, _ = os.path.splitext(args.out_file_name)
+        name = os.path.basename(args.out_file_name)
 
     data = hex_fmt(asm_bin, memory)
+    c, h = c_fmt(asm_bin, memory, name)
+
+    print(f"\nHex Output")
+    print("-"*80)
     for v in data:
         print(v)
-
-    c, h = c_fmt(asm_bin, memory, name)
+    print("-"*80,"\n")
+    print("\nC output")
+    print("-"*80)
     for v in c:
         print(v)
     for v in h:
         print(v)
+    print("-"*80,"\n")
 
-    if args.hex_fmt_to_file:
-        f = open(f"{path_file_name}.hex", 'w')
-        for v in data:
-            f.write(v+"\n")
-        f.close()
+    hex_name = os.path.join(src_path, f"{name}.hex")
+    with open(hex_name, 'w') as f:
+        f.write("\n".join(data))
 
-    if args.c_fmt_to_file:
-        f = open(f"{path_file_name}.c", 'w')
-        for v in c:
-            f.write(v+"\n")
-        f.close()
-        f = open(f"{path_file_name}.h", 'w')
-        for v in h:
-            f.write(v+"\n")
-        f.close()
+    if args.out_file_name:
+        c_name = os.path.join(src_path, f"{name}.c")
+        h_name = os.path.join(src_path, f"{name}.h")
+        with open(c_name, 'w') as f:
+            f.write("\n".join(c))
+        with open(h_name, 'w') as f:
+            f.write("\n".join(h))
+
 
