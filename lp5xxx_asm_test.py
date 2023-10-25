@@ -26,7 +26,7 @@ class TestASM(unittest.TestCase):
     def test_labels(self):
         src_name = os.path.join(".", "src", "labels.src")
         src = open(src_name)
-        memory, labels = lp5xxx_asm.ngparse(src)
+        memory, labels = lp5xxx_asm.parse(src)
         for m in chk_labels:
             self.assertEqual(f"{labels[m]:02X}", chk_labels[m], f"label missmatch [{m}]")
 
