@@ -97,10 +97,12 @@ def asm(labels, memory):
     return asm_bin + padding
 
 
-def c_fmt(asm, memory, name):
+def c_fmt(asm, memory, name, post="", hdr=True):
     s = ""
-    c = ["#include <%s.h>" % name,]
-    c.append("const uint8_t %s[]={" % name)
+    c = [""]
+    if hdr:
+        c = ["#include <%s.h>" % name,]
+    c.append("const uint8_t %s%s[]={" % (name, post))
     for i in range(32):
         s = ""
         idx = 16*i
@@ -112,18 +114,22 @@ def c_fmt(asm, memory, name):
         c.append(s)
 
     c.append("};")
-    d = []
+    d = [""]
     for m in memory:
         if m['op'] == 'segment':
             d.append(f"0x{m['prg']:02X}")
 
-    c.append("const uint8_t %s_addr[]={%s};" % (name, ",".join(d)))
+    c.append("const uint8_t %s%s_addr[]={%s};" % (name, post, ",".join(d)))
 
-    h = ["#ifndef _%s_H_" % name.upper(),]
-    h.append("#define _%s_H_" % name.upper())
+    h = [""]
+    if hdr:
+        h = ["#ifndef _%s_H_" % name.upper(),]
+        h.append("#define _%s_H_" % name.upper())
+        h.append("#include <sys.h>")
     h.append("extern const uint8_t %s[%s];" % (name, len(asm)))
     h.append("extern const uint8_t %s_addr[3];" % (name))
-    h.append("#endif /* _%s_H_ */" % name.upper())
+    if hdr:
+        h.append("#endif /* _%s_H_ */" % name.upper())
 
     return c, h
 
@@ -163,6 +169,9 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--c-fmt', action="store_true",
                         dest="c_fmt_to_file",
                         help="Generate .c and .h source file")
+    parser.add_argument('-a', '--c-append', action="store_true",
+                        dest="c_append_to_file",
+                        help="Append generate .c and .h to exisiting files source file")
 
     try:
         args = parser.parse_args()
@@ -176,13 +185,20 @@ if __name__ == "__main__":
     src_path, src_name = os.path.split(args.src)
     name, _ = os.path.splitext(args.src)
     name = os.path.basename(name)
+
     if args.out_file_name is not None:
         src_path, src_name = os.path.split(args.out_file_name)
         name, _ = os.path.splitext(args.out_file_name)
         name = os.path.basename(args.out_file_name)
 
+    filemode ='w'
+    if args.c_append_to_file:
+        filemode ='a'
+
+    c_name = os.path.join(src_path, f"{name}.c")
+    h_name = os.path.join(src_path, f"{name}.h")
     data = hex_fmt(asm_bin, memory)
-    c, h = c_fmt(asm_bin, memory, name)
+    c, h = c_fmt(asm_bin, memory, name, hdr=not args.c_append_to_file)
 
     print("\nHex Output")
     print("-"*80)
@@ -201,10 +217,9 @@ if __name__ == "__main__":
     with open(hex_name, 'w') as f:
         f.write("\n".join(data))
 
-    if args.out_file_name:
-        c_name = os.path.join(src_path, f"{name}.c")
-        h_name = os.path.join(src_path, f"{name}.h")
-        with open(c_name, 'w') as f:
+    if args.out_file_name or args.c_append_to_file:
+        with open(c_name, filemode) as f:
             f.write("\n".join(c))
-        with open(h_name, 'w') as f:
+        with open(h_name, filemode) as f:
             f.write("\n".join(h))
+
