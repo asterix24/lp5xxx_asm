@@ -1,0 +1,40 @@
+r0:  dw  0000000000000001b
+r3:  dw  0000000000001000b
+r6:  dw  0000000001000000b
+
+g1:  dw  0000000000000010b
+g4:  dw  0000000000010000b
+g7:  dw  0000000010000000b
+
+b2:  dw  0000000000000100b
+b5:  dw  0000000000100000b
+b8:  dw  0000000100000000b
+
+all: dw  0000000111111111b
+.segment program1
+  map_addr  all
+  ramp      1,100
+  ramp      1,-100
+  wait      0.2
+  map_start b2
+  load_end  b8
+  trigger   s{1}
+  end
+.segment program2
+  trigger   w{1}
+loop1:
+  set_pwm  0
+  map_next
+  wait     0.1
+  set_pwm  15
+  map_next
+  wait     0.1
+  set_pwm  0
+  map_next
+  wait     0.1
+  map_prev
+  wait     0.3
+  branch   3,loop1
+  end
+.segment program3
+  rst
