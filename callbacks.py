@@ -161,7 +161,7 @@ def op_ramp(op, table, labels, inst):
 
     variable = False
     try:
-        ramp_time = int(inst['args'][0]) * 1000  # for convenience is bettere in ms
+        ramp_time = int(float(inst['args'][0]) * 1000)  # for convenience is bettere in ms
         level = int(inst['args'][1])
     except ValueError:
         variable = True
@@ -179,6 +179,8 @@ def op_ramp(op, table, labels, inst):
                 if pre:
                     try:
                         prescale = int(pre[0])
+                        if prescale > 1:
+                            raise ValueError(show_msg("Error", inst, "Invalid value for prescale, should be 0 or 1"))
                     except ValueError:
                         raise ValueError(show_msg("Error", inst, "Invalid value for prescale"))
             if n == 2:
