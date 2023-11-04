@@ -7,7 +7,7 @@ from instruction_set import lookup_table
 from callbacks import show_msg
 
 
-def parse(src):
+def parse(src, log):
     pc_instruction = 0x0
     labels = {}
     memory = []
@@ -75,11 +75,10 @@ def parse(src):
     return memory, labels
 
 
-def asm(labels, memory, verbose=False):
+def asm(labels, memory, log):
     asm_bin = []
     for m in memory:
-        if verbose:
-            print(f"{m['addr']:02X}-> {list(m.values())}")
+        log.debug(f"{m['addr']:02X}-> {list(m.values())}")
 
         if m['op'] is None:
             continue
@@ -255,7 +254,6 @@ if __name__ == "__main__":
     import sys
     import os
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s]: %(message)s')
 
     parser = argparse.ArgumentParser(
         prog='lp55xx_asm',
@@ -278,12 +276,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    level = logging.WARNING
+    if args.verbose:
+        level = logging.DEBUG
+    logging.basicConfig(level=level, format='%(asctime)s [%(levelname)s]: %(message)s')
+
     try:
         asm_data = []
         for f in args.files_src:
             src = open(f)
-            memory, labels = parse(src)
-            asm_bin = asm(labels, memory, args.verbose)
+            logging.debug(f)
+            memory, labels = parse(src, logging)
+            asm_bin = asm(labels, memory, logging)
 
             src_path, src_name = os.path.split(f)
             name, _ = os.path.splitext(f)
@@ -300,7 +304,7 @@ if __name__ == "__main__":
         logging.error(f"{e}")
         sys.exit(1)
 
-    logging.info("Questo è un messaggio di debug")
+
     for x in asm_data:
         data = hex_fmt(x['bin'], x['memory'])
         fn = os.path.join(x['path'], f"{x['name']}"+".hex")
@@ -318,39 +322,5 @@ if __name__ == "__main__":
                 if '.c' in i:
                     c_name = i
 
-        logging.info(f"{c_name}, {h_name}")
+        logging.debug(f"{c_name}, {h_name}")
         c_fmt_merge(asm_data, c_name, h_name)
-
-
-    sys.exit(1)
-
-
-    c_name = os.path.join(src_path, f"{name}.c")
-    h_name = os.path.join(src_path, f"{name}.h")
-    data = hex_fmt(asm_bin, memory)
-    c, h = c_fmt(asm_bin, memory, name, hdr=not args.c_append_to_file)
-
-    if not args.quite:
-        print("\nHex Output")
-        print("-"*80)
-        for v in data:
-            print(v)
-        print("-"*80, "\n")
-        print("\nC output")
-        print("-"*80)
-        for v in c:
-            print(v)
-        for v in h:
-            print(v)
-        print("-"*80, "\n")
-
-    hex_name = os.path.join(src_path, f"{name}.hex")
-    with open(hex_name, 'w') as f:
-        f.write("\n".join(data))
-
-    if args.out_file_name or args.c_append_to_file:
-        with open(c_name, filemode) as f:
-            f.write("\n".join(c))
-        with open(h_name, filemode) as f:
-            f.write("\n".join(h))
-
