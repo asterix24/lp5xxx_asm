@@ -97,6 +97,52 @@ def asm(labels, memory, log):
 
     return asm_bin + padding
 
+def deasm(bin, addr, log):
+    if len(addr) < 3:
+        raise ValueError(show_msg("Error", m, "wrong address table"))
+
+    memory = []
+    for i in range(len(bin)//2):
+        b = bin[i*2] << 8 | bin[i*2+1]
+        memory.append(b)
+
+    vars = memory[:addr[0]]
+    #m = bin[addr[0]:]
+    #eng1 = bin[addr[0]:addr[1]]
+    #eng2 = bin[addr[1]:addr[2]]
+    #eng3 = bin[addr[2]:]
+    print(vars)
+    print(addr)
+    #for i in memory[addr[0]:]:
+    #    print(f"{i:04x}")
+
+    idx = 1
+    for n, i in enumerate(memory):
+        op_name = []
+        op_st = ""
+        if n < addr[0]:
+            op_st = f"a{n}: dw {i:016b}b"
+            continue
+        for op in lookup_table:
+            for k in [('op', 'mask'), ('opv', 'maskv')]:
+                opk, mk = k
+                if opk not in lookup_table[op]:
+                    continue
+                p = lookup_table[op][opk]
+                if p is None:
+                    continue
+
+                v = i & ~lookup_table[op][mk]
+                if v == p:
+                    op_st = f"{v:04x} {p:04x}"
+                    op_name.append(op)
+
+        if n in addr:
+            print(f".segment program{idx}")
+            idx += 1
+        print(f"{n:03d}: {i:04x} {op_st} {op_name}")
+
+
 
 def __bin_to_table(bin):
     c = []
