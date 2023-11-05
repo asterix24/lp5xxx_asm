@@ -21,6 +21,7 @@ chk_labels = {
     "loop1": "10"
 }
 
+
 class TestASM(unittest.TestCase):
     def setUp(self):
         tracemalloc.start()
@@ -33,7 +34,6 @@ class TestASM(unittest.TestCase):
 
             for n, i in enumerate(chk_bin):
                 self.assertEqual(i, asm_bin[n], f"Missmatch [{i}] {i:02x} != {asm_bin[n]:02x}")
-
 
     def test_labels(self):
         src_name = os.path.join(".", "src", "labels.src")
@@ -120,9 +120,9 @@ class TestASM(unittest.TestCase):
 
         addr = [0x0A, 0x12, 0x20]
 
-        #src = open(os.path.join(".", "src", "test2.src"))
-        #memory, labels = lp5xxx_asm.parse(src, logging)
-        #asm_bin = lp5xxx_asm.asm(labels, memory, logging)
+        # src = open(os.path.join(".", "src", "test2.src"))
+        # memory, labels = lp5xxx_asm.parse(src, logging)
+        # asm_bin = lp5xxx_asm.asm(labels, memory, logging)
         lp5xxx_asm.deasm(bin, addr, logging)
         print(memory, labels)
 
@@ -135,7 +135,7 @@ class TestASM(unittest.TestCase):
 
         addr = [0x0A, 0x10, 0x15]
 
-        #self.__dotest(os.path.join(".", "src", "alu.src"), chk_bin)
+        # self.__dotest(os.path.join(".", "src", "alu.src"), chk_bin)
         lp5xxx_asm.deasm(bin, addr, logging)
         print(memory, labels)
 
@@ -151,7 +151,7 @@ class TestASM(unittest.TestCase):
         ]
 
         addr = [0x0A, 0x1C, 0x33]
-        #self.__dotest(os.path.join(".", "src", "test1.src"), chk_bin)
+        # self.__dotest(os.path.join(".", "src", "test1.src"), chk_bin)
         lp5xxx_asm.deasm(bin, addr, logging)
         print(memory, labels)
 

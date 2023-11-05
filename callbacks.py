@@ -35,7 +35,6 @@ def show_msg(flag, ctx, msg):
 
 
 def op_nop(op, table, labels, inst):
-    print(f"op_nop: {op}")
     return []
 
 
