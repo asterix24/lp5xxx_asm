@@ -63,6 +63,16 @@ If you want overwrite the default output filename:
 
 There is the possibility to build more src files at the same time, the output will be one hex file for each source file you would build. If you specify the `-c` switch to build source files, the behavior is the same. But if you specify the `-o` switch to overwrite the default output, all sources will be merged into the given filename
 
+# Disclaimer
 
+This software is distributed under the terms of the GNU General Public License Version 2 (GPL2) without any warranty, expressed or implied. The software is provided "as is," and the user assumes the entire risk as to the quality and performance of the software. The developers and contributors to this software shall not be held liable for any damages or issues arising from the use or inability to use this software, including but not limited to direct, indirect, incidental, or consequential damages.
+
+The software may not function as intended under all circumstances, and its suitability for any specific purpose cannot be guaranteed. Users are encouraged to use this software at their own discretion and are responsible for testing, verifying, and ensuring its appropriateness for their use case.
+
+By using this software, you acknowledge and agree that no guarantees or warranties, explicit or implied, have been made by the developers, contributors, or distributors regarding its performance, reliability, or fitness for any particular purpose.
+
+Please carefully read and understand the terms of the GPL2 license under which this software is distributed. Your use of this software implies your acceptance of these terms and conditions.
+
+This disclaimer helps to clarify the lack of warranty and limitations of liability associated with the software while emphasizing the user's responsibility to assess its suitability for their needs.
 
 
