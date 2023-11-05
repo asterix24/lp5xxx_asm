@@ -97,32 +97,34 @@ def asm(labels, memory, log):
 
     return asm_bin + padding
 
+
 def deasm(bin, addr, log):
     if len(addr) < 3:
-        raise ValueError(show_msg("Error", m, "wrong address table"))
+        raise ValueError(show_msg("Error", addr, "wrong address table"))
 
     memory = []
     for i in range(len(bin)//2):
         b = bin[i*2] << 8 | bin[i*2+1]
         memory.append(b)
 
-    vars = memory[:addr[0]]
-    #m = bin[addr[0]:]
-    #eng1 = bin[addr[0]:addr[1]]
-    #eng2 = bin[addr[1]:addr[2]]
-    #eng3 = bin[addr[2]:]
+    vars = []
+    for n, v in enumerate(memory[:addr[0]]):
+        vars.append({f'a{n}': v})
+
     print(vars)
     print(addr)
-    #for i in memory[addr[0]:]:
-    #    print(f"{i:04x}")
-
     idx = 1
     for n, i in enumerate(memory):
         op_name = []
         op_st = ""
+        if n in addr:
+            log.info(f".segment program{idx}")
+            idx += 1
+
         if n < addr[0]:
             op_st = f"a{n}: dw {i:016b}b"
             continue
+
         for op in lookup_table:
             for k in [('op', 'mask'), ('opv', 'maskv')]:
                 opk, mk = k
@@ -137,11 +139,7 @@ def deasm(bin, addr, log):
                     op_st = f"{v:04x} {p:04x}"
                     op_name.append(op)
 
-        if n in addr:
-            print(f".segment program{idx}")
-            idx += 1
         print(f"{n:03d}: {i:04x} {op_st} {op_name}")
-
 
 
 def __bin_to_table(bin):
@@ -158,6 +156,7 @@ def __bin_to_table(bin):
 
     return "\n".join(c)
 
+
 def __memory_ddr_to_table(memory):
     d = []
     for m in memory:
@@ -173,7 +172,7 @@ HEADER_DATA_ADDR = """
 extern const uint8_t <NAME><POST>_addr[3];
 """
 
-HEADER_TEMPLAE=f"""
+HEADER_TEMPLAE = """
 #ifndef _<NAME>_H_
 #define _<NAME>_H_
 #include <sys.h>
@@ -184,23 +183,24 @@ HEADER_TEMPLAE=f"""
 
 """
 
-SOURCE_DATA="""
+SOURCE_DATA = """
 const uint8_t <NAME><POST>[]={
 <DATA>
 };
 
 """
 
-SOURCE_DATA_ADDR="""
+SOURCE_DATA_ADDR = """
 const uint8_t <NAME><POST>_addr[]={<DATA>};
 """
 
-SOURCE_TEMPLAE="""
+SOURCE_TEMPLAE = """
 #include <<NAME>.h>
 
 <SRC>
 
 """
+
 
 def c_fmt_merge(asm_data, c_name=None, h_name=None, hdr=True, post=""):
 
@@ -300,7 +300,6 @@ if __name__ == "__main__":
     import sys
     import os
 
-
     parser = argparse.ArgumentParser(
         prog='lp55xx_asm',
         description='ASM for Texas led driver LP55xx ic',
@@ -344,12 +343,11 @@ if __name__ == "__main__":
                 'name': name,
                 'memory': memory,
                 'labels': labels,
-                'bin' : asm_bin
+                'bin': asm_bin
             })
     except ValueError as e:
         logging.error(f"{e}")
         sys.exit(1)
-
 
     for x in asm_data:
         data = hex_fmt(x['bin'], x['memory'])
