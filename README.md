@@ -53,11 +53,9 @@ If you want to generate also a .c .h source file as well:
 
 <img width="640" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/54d7003b-3b08-48d3-9dc6-4b18f68f6ba7">
 
-You can specify manually specify the .c and .h name with its path.
-
 <img width="638" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/a6cdd710-9e8b-4fae-8f2c-380cea7f3937">
 
-If you want overwrite the default output filename:
+If you want overwrite the default output filename, you can specify manually specify the .c and .h name with its path:
 
 <img width="620" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/0bd42fe4-c678-4baa-86e4-37b9f58debe7">
 
