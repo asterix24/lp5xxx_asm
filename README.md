@@ -33,4 +33,36 @@ Now the feature are:
 - Implement a meta-language to make pattern development easier
 - Simulator
 
+# Usage
+
+The asm uses standard Python3 without any dependencies.
+In the `src` folder you could find some example of asm that we use in the unittest.
+
+<img width="672" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/3f71dc1a-6676-4ec3-9de6-25c8490cbf8d">
+
+To assemble src, you just do this:
+```
+~/src/github/ti_lp55xx_asm · (main ±)
+➜  python lp5xxx_asm.py src/test1.src   
+```
+By default the output is `hex` file.
+
+<img width="681" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/506ea6f7-7776-4a8b-b245-67a6dea8f7d3">
+
+If you want to generate also a .c .h source file as well:
+
+<img width="640" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/54d7003b-3b08-48d3-9dc6-4b18f68f6ba7">
+
+You can specify manually specify the .c and .h name with its path.
+
+<img width="638" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/a6cdd710-9e8b-4fae-8f2c-380cea7f3937">
+
+If you want overwrite the default output filename:
+
+<img width="620" alt="immagine" src="https://github.com/asterix24/lp5xxx_asm/assets/1128161/0bd42fe4-c678-4baa-86e4-37b9f58debe7">
+
+There is the possibility to build more src files at the same time, the output will be one hex file for each source file you would build. If you specify the `-c` switch to build source files, the behavior is the same. But if you specify the `-o` switch to overwrite the default output, all sources will be merged into the given filename
+
+
+
 
