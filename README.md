@@ -1,5 +1,7 @@
 # Assembler for Texas IC Led Driver Family LP5569
 
+![Unittest](https://github.com/asterix24/lp5xxx_asm/actions/workflows/python-app.yml/badge.svg)
+
 ## Description
 
 The LP5569 device is a programmable, easy-to-use 9-channel I2C LED driver designed to produce lighting effects for various applications. The LED driver is equipped with an internal SRAM memory for user- programmed sequences and three programmable LED engines, which allow operation without processor control. Autonomous operation reduces system power consumption when the processor is put in sleep mode.
